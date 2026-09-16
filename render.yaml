@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: kliktech-esim
+    runtime: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app
+    healthCheckPath: /healthz
+    autoDeploy: true
+    numInstances: 1
+    disk:
+      name: kliktech-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: KLIKTECH_OPS_DB
+        value: /var/data/kliktech_operations.sqlite3
+      - key: KLIKTECH_STOCK_DB
+        value: /var/data/kliktech_stock.sqlite3
+      - key: KLIKTECH_COOKIE_SECURE
+        value: "1"
+      - key: KLIKTECH_SECRET_KEY
+        generateValue: true
+      - key: KLIKTECH_ADMIN_EMAIL
+        sync: false
+      - key: KLIKTECH_ADMIN_PASSWORD
+        sync: false
+      - key: BRAVOPAY_API_KEY
+        sync: false
+      - key: BRAVOPAY_WEBHOOK_SECRET
+        sync: false

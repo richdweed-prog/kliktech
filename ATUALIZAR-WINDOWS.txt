@@ -1,0 +1,36 @@
+CORREÇÃO DA KLIKTECH — ATUALIZAR WINDOWS
+
+O erro 404 em /ademiroputo e a mensagem de senha inválida indicam que o Windows está executando um app.py antigo ou está usando outro banco.
+
+1. Feche o servidor com CTRL+C.
+2. Faça uma cópia de segurança destes arquivos, sem apagá-los:
+   kliktech_operations.sqlite3
+   kliktech_stock.sqlite3
+3. Substitua app.py pelo app.py deste pacote.
+4. Substitua toda a pasta templates pela pasta templates deste pacote.
+5. Substitua a pasta static pela pasta static deste pacote, se ela existir.
+6. Mantenha seu arquivo .env na pasta do projeto. Ele deve conter:
+
+KLIKTECH_ADMIN_EMAIL=seu-email-administrativo
+KLIKTECH_ADMIN_PASSWORD=sua-senha-administrativa
+KLIKTECH_ADMIN_PATH=ademiroputo
+KLIKTECH_COOKIE_SECURE=0
+PORT=5000
+
+7. No Prompt de Comando, execute:
+
+cd "C:\E-SIM SITE"
+python -m pip install -r requirements.txt
+python app.py
+
+8. Abra primeiro:
+
+http://127.0.0.1:5000/cliente
+
+Faça login com o e-mail e a senha do .env. Depois abra:
+
+http://127.0.0.1:5000/ademiroputo
+
+Não use /admin. Essa rota antiga deve retornar 404.
+
+IMPORTANTE: não apague os dois bancos. O app.py atualizado sincroniza o usuário administrativo do .env ao iniciar. Em produção com HTTPS, altere KLIKTECH_COOKIE_SECURE para 1; no localhost mantenha 0.
