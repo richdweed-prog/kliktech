@@ -477,6 +477,16 @@ def inventory_detail(item_id):
     if not row:return jsonify(error='Item de estoque não encontrado.'),404
     return jsonify(item={'id':row['id'],'plan':row['plan'],'model':row['model'],'line':row['line'],'ddd':row['ddd'],'smdp':row['smdp'],'activation_code':row['activation_code'],'sold':bool(row['sold_at']),'sold_at':row['sold_at'],'sold_to':row['sold_to'],'created_at':row['created_at'],'photo_url':('/api/admin/inventory/%s/photo'%row['id']) if row['photo'] else None})
 
+@app.delete('/api/admin/inventory/<int:item_id>')
+@admin_required
+def delete_inventory(item_id):
+    c=stockdb()
+    row=c.execute('SELECT id,sold_at FROM inventory WHERE id=?',(item_id,)).fetchone()
+    if not row:return jsonify(error='eSIM não encontrado.'),404
+    if row['sold_at']:return jsonify(error='Não é possível excluir um eSIM já vendido.'),409
+    c.execute('DELETE FROM inventory WHERE id=? AND sold_at IS NULL',(item_id,));c.commit()
+    return jsonify(ok=True)
+
 @app.get('/api/admin/inventory/<int:item_id>/photo')
 @admin_required
 def inventory_detail_photo(item_id):
