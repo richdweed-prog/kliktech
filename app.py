@@ -298,12 +298,10 @@ def update_plan(plan_id):
 @app.delete('/api/admin/plans/<int:plan_id>')
 @admin_required
 def delete_plan(plan_id):
-    c=ops();row=c.execute('SELECT plan,active FROM plan_catalog WHERE id=?',(plan_id,)).fetchone()
-    if not row:return jsonify(error='Slot não encontrado.'),404
-    if row['active']:return jsonify(error='Desative o slot antes de excluir.'),409
-    # O catálogo pode ser removido sem apagar estoque ou compras históricas.
-    # Esses registros guardam o texto do plano e continuam íntegros para auditoria.
-    c.execute('DELETE FROM plan_catalog WHERE id=?',(plan_id,));c.commit();return jsonify(ok=True)
+    c=ops();cur=c.execute('DELETE FROM plan_catalog WHERE id=?',(plan_id,));c.commit()
+    if cur.rowcount!=1:return jsonify(error='Slot não encontrado.'),404
+    # Exclui apenas o cadastro do slot; estoque e compras históricas permanecem preservados.
+    return jsonify(ok=True)
 
 @app.get('/api/availability')
 @login_required
