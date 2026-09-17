@@ -388,8 +388,8 @@ def add_inventory_batch():
 @app.post('/api/admin/inventory')
 @admin_required
 def add_inventory():
-    f=request.form;plan=f.get('plan');model=f.get('model','').strip();smdp=f.get('smdp','').strip();code=f.get('activation_code','').strip();photo=request.files.get('photo')
-    if plan not in catalog_prices(False) or not model or not smdp or not code:return jsonify(error='Preencha plano, modelo e códigos.'),400
+    f=request.form;plan=f.get('plan');model=f.get('model','').strip() or 'Não informado';smdp=f.get('smdp','').strip();code=f.get('activation_code','').strip();photo=request.files.get('photo')
+    if plan not in catalog_prices(False) or not smdp or not code:return jsonify(error='Preencha plano, SM-DP+ e código de ativação.'),400
     p=photo.read() if photo else None;stockdb().execute('INSERT INTO inventory(plan,model,line,ddd,photo,photo_mime,smdp,activation_code) VALUES(?,?,?,?,?,?,?,?)',(plan,model,f.get('line','').strip(),f.get('ddd','').strip(),p,photo.mimetype if photo else None,smdp,code));stockdb().commit();return jsonify(ok=True)
 @app.get('/api/admin/dashboard')
 @admin_required
