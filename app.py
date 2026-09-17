@@ -47,8 +47,22 @@ def stockdb(): return DBProxy(db())
 ADMIN_PATH='ademiroputo'
 app=Flask(__name__,template_folder='templates',static_folder='static',static_url_path='/static')
 app.config.update(SECRET_KEY=os.environ.get('KLIKTECH_SECRET_KEY',secrets.token_hex(32)),SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Lax',SESSION_COOKIE_SECURE=os.environ.get('KLIKTECH_COOKIE_SECURE','0')=='1',MAX_CONTENT_LENGTH=6*1024*1024)
-PLANS={'30GB · 1 mês':20,'45GB · 1 mês':30,'30GB · 2 meses':40,'45GB · 2 meses':50}
+DEFAULT_PLANS={'30GB · 1 mês':20,'45GB · 1 mês':30,'30GB · 2 meses':40,'45GB · 2 meses':50}
+PLANS=DEFAULT_PLANS.copy()
 RATE={}
+
+def catalog_prices(active_only=True):
+    try:
+        where = ' WHERE active=TRUE' if active_only else ''
+        rows = db().execute('SELECT plan,price_cents FROM plan_catalog'+where+' ORDER BY id').fetchall()
+        return {r['plan']: int(r['price_cents']) for r in rows}
+    except Exception:
+        return PLANS.copy()
+
+def catalog_rows(active_only=True):
+    where = ' WHERE active=TRUE' if active_only else ''
+    return db().execute('SELECT id,plan,gigas,tempo,price_cents,active,featured,created_at FROM plan_catalog'+where+' ORDER BY id').fetchall()
+
 @app.teardown_appcontext
 def close(_=None):
     c=g.pop('db',None)
@@ -62,6 +76,8 @@ def init_db():
     CREATE TABLE IF NOT EXISTS carts (id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES users(id),session_key TEXT,plan TEXT NOT NULL,status TEXT DEFAULT 'active',created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS purchases (id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id),inventory_id BIGINT NOT NULL,plan TEXT NOT NULL,price_cents BIGINT NOT NULL,status TEXT DEFAULT 'approved',created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS admin_events (id BIGSERIAL PRIMARY KEY,event TEXT,detail TEXT,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS plan_catalog (id BIGSERIAL PRIMARY KEY,plan TEXT UNIQUE NOT NULL,gigas TEXT NOT NULL,tempo TEXT NOT NULL,price_cents BIGINT NOT NULL,active BOOLEAN NOT NULL DEFAULT TRUE,featured BOOLEAN NOT NULL DEFAULT FALSE,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS plan_catalog (id BIGSERIAL PRIMARY KEY,plan TEXT UNIQUE NOT NULL,gigas TEXT NOT NULL,tempo TEXT NOT NULL,price_cents BIGINT NOT NULL,active BOOLEAN NOT NULL DEFAULT TRUE,featured BOOLEAN NOT NULL DEFAULT FALSE,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS inventory (id BIGSERIAL PRIMARY KEY,plan TEXT NOT NULL,model TEXT NOT NULL,line TEXT,ddd TEXT,photo BYTEA,photo_mime TEXT,smdp TEXT NOT NULL,activation_code TEXT NOT NULL UNIQUE,sold_at TIMESTAMPTZ,sold_to BIGINT,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
     """
     c=db()
@@ -78,6 +94,12 @@ def init_db():
             c.execute('UPDATE users SET email=%s,name=%s,password_hash=%s,is_admin=1 WHERE id=%s',(email,'Administrador',generate_password_hash(pw),existing['id']))
         else:
             c.execute('INSERT INTO users(email,name,password_hash,is_admin) VALUES(%s,%s,%s,1)',(email,'Administrador',generate_password_hash(pw)))
+    for plan, price in DEFAULT_PLANS.items():
+        gigas, tempo = plan.split(' · ', 1)
+        c.execute('INSERT INTO plan_catalog(plan,gigas,tempo,price_cents,active,featured) VALUES(%s,%s,%s,%s,TRUE,%s) ON CONFLICT (plan) DO NOTHING',(plan,gigas,tempo,price*100,plan=='45GB · 1 mês'))
+    for plan, price in DEFAULT_PLANS.items():
+        gigas, tempo = plan.split(' · ', 1)
+        c.execute('INSERT INTO plan_catalog(plan,gigas,tempo,price_cents,active,featured) VALUES(%s,%s,%s,%s,TRUE,%s) ON CONFLICT (plan) DO NOTHING',(plan,gigas,tempo,price*100,plan=='45GB · 1 mês'))
     c.commit()
 
 @app.before_request
@@ -184,7 +206,7 @@ def profile_photo():
 @app.post('/api/cart')
 def cart_add():
     d=request.get_json() or {};plan=d.get('plan')
-    if plan not in PLANS:return jsonify(error='Plano inválido.'),400
+    if plan not in catalog_prices():return jsonify(error='Plano inválido ou indisponível.'),400
     c=ops();sid=session.get('cart_key') or secrets.token_urlsafe(18);session['cart_key']=sid;c.execute('INSERT INTO carts(session_key,plan) VALUES(?,?)',(sid,plan));c.commit();return jsonify(ok=True)
 @app.post('/api/wallet/create-pix')
 @login_required
@@ -220,6 +242,108 @@ def bravopay_webhook():
         amt=int(d.get('amount_cents') or ch['amount_cents']);c.execute('UPDATE users SET balance_cents=balance_cents+? WHERE id=?',(amt,ch['user_id']));c.execute('UPDATE wallet_charges SET status="PAID",paid_at=CURRENT_TIMESTAMP WHERE id=?',(ch['id'],));c.execute('INSERT INTO wallet_ledger(event_id,user_id,provider_id,amount_cents,kind) VALUES(?,?,?,?,?)',(eid,ch['user_id'],ch['provider_id'],amt,'credit'))
     elif typ in ('transaction.expired','transaction.failed'):c.execute('UPDATE wallet_charges SET status=? WHERE id=?',('EXPIRED' if typ.endswith('expired') else 'FAILED',ch['id']))
     c.commit();return jsonify(ok=True)
+@app.get('/api/plans')
+def public_plans():
+    rows=catalog_rows(True)
+    return jsonify(plans=[{'plan':r['plan'],'gigas':r['gigas'],'tempo':r['tempo'],'price':r['price_cents']/100,'featured':bool(r['featured'])} for r in rows])
+
+@app.get('/api/admin/plans')
+@admin_required
+def admin_plans():
+    rows=catalog_rows(False)
+    return jsonify(plans=[{'id':r['id'],'plan':r['plan'],'gigas':r['gigas'],'tempo':r['tempo'],'price':r['price_cents']/100,'active':bool(r['active']),'featured':bool(r['featured']),'created_at':r['created_at']} for r in rows])
+
+@app.post('/api/admin/plans')
+@admin_required
+def create_plan():
+    d=request.get_json() or {}
+    gigas=str(d.get('gigas') or '').strip().upper()
+    tempo=str(d.get('tempo') or '').strip()
+    label=str(d.get('plan') or '').strip() or f'{gigas} · {tempo}'
+    try: price_cents=int(round(float(d.get('price',0))*100))
+    except Exception: price_cents=0
+    if not gigas or not tempo or not label or price_cents<=0:return jsonify(error='Informe franquia, ciclo e preço válidos.'),400
+    try:
+        c=ops(); c.execute('INSERT INTO plan_catalog(plan,gigas,tempo,price_cents,active,featured) VALUES(?,?,?,?,?,?)',(label,gigas,tempo,price_cents,bool(d.get('active',True)),bool(d.get('featured',False))));c.commit()
+    except UniqueViolation:return jsonify(error='Já existe um slot com esse nome.'),409
+    return jsonify(ok=True,plan=label),201
+
+@app.patch('/api/admin/plans/<int:plan_id>')
+@admin_required
+def update_plan(plan_id):
+    d=request.get_json() or {}; fields=[]; values=[]
+    for key in ('gigas','tempo','plan'):
+        if key in d and str(d[key]).strip(): fields.append(key+'=?'); values.append(str(d[key]).strip())
+    if 'price' in d:
+        try: fields.append('price_cents=?'); values.append(int(round(float(d['price'])*100)))
+        except Exception:return jsonify(error='Preço inválido.'),400
+    for key in ('active','featured'):
+        if key in d: fields.append(key+'=?'); values.append(bool(d[key]))
+    if not fields:return jsonify(error='Nenhuma alteração enviada.'),400
+    values.append(plan_id);c=ops();cur=c.execute('UPDATE plan_catalog SET '+','.join(fields)+' WHERE id=?',tuple(values));c.commit()
+    if cur.rowcount!=1:return jsonify(error='Slot não encontrado.'),404
+    return jsonify(ok=True)
+
+@app.delete('/api/admin/plans/<int:plan_id>')
+@admin_required
+def delete_plan(plan_id):
+    c=ops();row=c.execute('SELECT plan FROM plan_catalog WHERE id=?',(plan_id,)).fetchone()
+    if not row:return jsonify(error='Slot não encontrado.'),404
+    used=stockdb().execute('SELECT 1 FROM inventory WHERE plan=? LIMIT 1',(row['plan'],)).fetchone()
+    if used:return jsonify(error='Este slot já possui estoque. Desative-o para não quebrar o histórico.'),409
+    c.execute('DELETE FROM plan_catalog WHERE id=?',(plan_id,));c.commit();return jsonify(ok=True)
+
+@app.get('/api/plans')
+def public_plans():
+    rows=catalog_rows(True)
+    return jsonify(plans=[{'plan':r['plan'],'gigas':r['gigas'],'tempo':r['tempo'],'price':r['price_cents']/100,'featured':bool(r['featured'])} for r in rows])
+
+@app.get('/api/admin/plans')
+@admin_required
+def admin_plans():
+    rows=catalog_rows(False)
+    return jsonify(plans=[{'id':r['id'],'plan':r['plan'],'gigas':r['gigas'],'tempo':r['tempo'],'price':r['price_cents']/100,'active':bool(r['active']),'featured':bool(r['featured']),'created_at':r['created_at']} for r in rows])
+
+@app.post('/api/admin/plans')
+@admin_required
+def create_plan():
+    d=request.get_json() or {}
+    gigas=str(d.get('gigas') or '').strip().upper()
+    tempo=str(d.get('tempo') or '').strip()
+    label=str(d.get('plan') or '').strip() or f'{gigas} · {tempo}'
+    try: price_cents=int(round(float(d.get('price',0))*100))
+    except Exception: price_cents=0
+    if not gigas or not tempo or not label or price_cents<=0:return jsonify(error='Informe franquia, ciclo e preço válidos.'),400
+    try:
+        c=ops(); c.execute('INSERT INTO plan_catalog(plan,gigas,tempo,price_cents,active,featured) VALUES(?,?,?,?,?,?)',(label,gigas,tempo,price_cents,bool(d.get('active',True)),bool(d.get('featured',False))));c.commit()
+    except UniqueViolation:return jsonify(error='Já existe um slot com esse nome.'),409
+    return jsonify(ok=True,plan=label),201
+
+@app.patch('/api/admin/plans/<int:plan_id>')
+@admin_required
+def update_plan(plan_id):
+    d=request.get_json() or {}; fields=[]; values=[]
+    for key in ('gigas','tempo','plan'):
+        if key in d and str(d[key]).strip(): fields.append(key+'=?'); values.append(str(d[key]).strip())
+    if 'price' in d:
+        try: fields.append('price_cents=?'); values.append(int(round(float(d['price'])*100)))
+        except Exception:return jsonify(error='Preço inválido.'),400
+    for key in ('active','featured'):
+        if key in d: fields.append(key+'=?'); values.append(bool(d[key]))
+    if not fields:return jsonify(error='Nenhuma alteração enviada.'),400
+    values.append(plan_id);c=ops();cur=c.execute('UPDATE plan_catalog SET '+','.join(fields)+' WHERE id=?',tuple(values));c.commit()
+    if cur.rowcount!=1:return jsonify(error='Slot não encontrado.'),404
+    return jsonify(ok=True)
+
+@app.delete('/api/admin/plans/<int:plan_id>')
+@admin_required
+def delete_plan(plan_id):
+    c=ops();row=c.execute('SELECT plan FROM plan_catalog WHERE id=?',(plan_id,)).fetchone()
+    if not row:return jsonify(error='Slot não encontrado.'),404
+    used=stockdb().execute('SELECT 1 FROM inventory WHERE plan=? LIMIT 1',(row['plan'],)).fetchone()
+    if used:return jsonify(error='Este slot já possui estoque. Desative-o para não quebrar o histórico.'),409
+    c.execute('DELETE FROM plan_catalog WHERE id=?',(plan_id,));c.commit();return jsonify(ok=True)
+
 @app.get('/api/availability')
 @login_required
 def availability():
@@ -229,19 +353,19 @@ def availability():
 @app.post('/api/purchase')
 @login_required
 def purchase():
-    d=request.get_json() or {};plan=d.get('plan');ddd=(d.get('ddd') or '').strip();price=PLANS.get(plan)
-    if not price:return jsonify(error='Plano inválido.'),400
+    d=request.get_json() or {};plan=d.get('plan');ddd=(d.get('ddd') or '').strip();price_cents=catalog_prices().get(plan) or 0
+    if not price_cents:return jsonify(error='Plano inválido.'),400
     c=ops();s=stockdb()
     try:
         c.execute('BEGIN');u=c.execute('SELECT * FROM users WHERE id=?',(g.user['id'],)).fetchone();item=s.execute("SELECT * FROM inventory WHERE plan=? AND sold_at IS NULL AND ddd=COALESCE(NULLIF(?, ''), ddd) ORDER BY id LIMIT 1",(plan,ddd)).fetchone()
         if not item:
             c.rollback();s.rollback();return jsonify(error='Sem eSIM disponível para este plano/DDD.'),409
-        if u['balance_cents']<price*100:
+        if u['balance_cents']<price_cents:
             c.rollback();s.rollback();return jsonify(error='Saldo insuficiente para este plano.'),402
         updated=s.execute('UPDATE inventory SET sold_at=CURRENT_TIMESTAMP,sold_to=? WHERE id=? AND sold_at IS NULL',(u['id'],item['id']))
         if updated.rowcount != 1:
             c.rollback();s.rollback();return jsonify(error='Este eSIM acabou de ser reservado. Escolha outro.'),409
-        c.execute('UPDATE users SET balance_cents=balance_cents-? WHERE id=?',(price*100,u['id']));c.execute('UPDATE carts SET status="converted",updated_at=CURRENT_TIMESTAMP WHERE session_key=? AND plan=? AND status="active"',(session.get('cart_key',''),plan));c.execute('INSERT INTO purchases(user_id,inventory_id,plan,price_cents) VALUES(?,?,?,?)',(u['id'],item['id'],plan,price*100));s.commit();c.commit();return jsonify(ok=True)
+        c.execute('UPDATE users SET balance_cents=balance_cents-? WHERE id=?',(price_cents,u['id']));c.execute('UPDATE carts SET status="converted",updated_at=CURRENT_TIMESTAMP WHERE session_key=? AND plan=? AND status="active"',(session.get('cart_key',''),plan));c.execute('INSERT INTO purchases(user_id,inventory_id,plan,price_cents) VALUES(?,?,?,?)',(u['id'],item['id'],plan,price_cents));s.commit();c.commit();return jsonify(ok=True)
     except Exception:c.rollback();s.rollback();raise
 @app.get('/api/account/purchases')
 @login_required
@@ -299,7 +423,7 @@ def add_inventory_batch():
 @admin_required
 def add_inventory():
     f=request.form;plan=f.get('plan');model=f.get('model','').strip();smdp=f.get('smdp','').strip();code=f.get('activation_code','').strip();photo=request.files.get('photo')
-    if plan not in PLANS or not model or not smdp or not code:return jsonify(error='Preencha plano, modelo e códigos.'),400
+    if plan not in catalog_prices(False) or not model or not smdp or not code:return jsonify(error='Preencha plano, modelo e códigos.'),400
     p=photo.read() if photo else None;stockdb().execute('INSERT INTO inventory(plan,model,line,ddd,photo,photo_mime,smdp,activation_code) VALUES(?,?,?,?,?,?,?,?)',(plan,model,f.get('line','').strip(),f.get('ddd','').strip(),p,photo.mimetype if photo else None,smdp,code));stockdb().commit();return jsonify(ok=True)
 @app.get('/api/admin/dashboard')
 @admin_required
@@ -314,6 +438,20 @@ def admin_users():
 @admin_required
 def inventory():
     rows=stockdb().execute('SELECT id,plan,model,line,ddd,sold_at IS NOT NULL sold,created_at FROM inventory ORDER BY id DESC').fetchall();return jsonify(items=[dict(r) for r in rows])
+
+@app.get('/api/admin/inventory/<int:item_id>')
+@admin_required
+def inventory_detail(item_id):
+    row=stockdb().execute('SELECT id,plan,model,line,ddd,smdp,activation_code,photo,photo_mime,sold_at,sold_to,created_at FROM inventory WHERE id=?',(item_id,)).fetchone()
+    if not row:return jsonify(error='Item de estoque não encontrado.'),404
+    return jsonify(item={'id':row['id'],'plan':row['plan'],'model':row['model'],'line':row['line'],'ddd':row['ddd'],'smdp':row['smdp'],'activation_code':row['activation_code'],'sold':bool(row['sold_at']),'sold_at':row['sold_at'],'sold_to':row['sold_to'],'created_at':row['created_at'],'photo_url':('/api/admin/inventory/%s/photo'%row['id']) if row['photo'] else None})
+
+@app.get('/api/admin/inventory/<int:item_id>/photo')
+@admin_required
+def inventory_detail_photo(item_id):
+    row=stockdb().execute('SELECT photo,photo_mime FROM inventory WHERE id=?',(item_id,)).fetchone()
+    if not row or not row['photo']:abort(404)
+    return app.response_class(row['photo'],mimetype=row['photo_mime'] or 'image/jpeg',headers={'Cache-Control':'private, no-store'})
 
 if __name__=='__main__':
     with app.app_context(): init_db()
