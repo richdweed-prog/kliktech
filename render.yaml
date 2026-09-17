@@ -24,6 +24,8 @@ services:
         value: "1"
       - key: KLIKTECH_SECRET_KEY
         generateValue: true
+      - key: DATABASE_URL
+        sync: false
       - key: KLIKTECH_ADMIN_EMAIL
         sync: false
       - key: KLIKTECH_ADMIN_PASSWORD

@@ -405,7 +405,7 @@ def dashboard():
     for r in o.execute("SELECT COALESCE(paid_at,created_at) created_at,amount_cents FROM wallet_charges WHERE status='PAID'").fetchall():
         key=str(r['created_at'])[:7]
         if key in by:by[key]['pix_paid']+=1;by[key]['pix_value']+=r['amount_cents']/100
-    return jsonify(metrics={'sales_count':sales['n'],'sales_value':sales['v']/100,'pending_pix_count':pix['n'],'pending_pix_value':pix['v']/100,'paid_topups':paid['v']/100,'available_stock':stock['n'],'abandoned_carts':ab['n']},monthly=months,recent=[{'plan':r['plan'],'price':r['price_cents']/100,'date':r['created_at'],'customer':r['name'],'email':mask_email(r['email'])} for r in recent])
+    current=months[-1];previous=months[-2];trend=None if not previous['revenue'] else round((current['revenue']-previous['revenue'])/previous['revenue']*100,1);return jsonify(metrics={'sales_count':sales['n'],'sales_value':sales['v']/100,'pending_pix_count':pix['n'],'pending_pix_value':pix['v']/100,'paid_topups':paid['v']/100,'available_stock':stock['n'],'abandoned_carts':ab['n'],'current_month_revenue':current['revenue'],'current_month_sales':current['sales'],'revenue_trend_percent':trend},monthly=months,recent=[{'plan':r['plan'],'price':r['price_cents']/100,'date':r['created_at'],'customer':r['name'],'email':mask_email(r['email'])} for r in recent])
 ESIM_COMPATIBILITY=[
     ('apple',['iphone xr','iphone xs','iphone 11','iphone 12','iphone 13','iphone 14','iphone 15','iphone 16','iphone 17','iphone se 2','iphone se 3'],'iPhone XS/XR ou posterior'),
     ('samsung',['galaxy s20','galaxy s21','galaxy s22','galaxy s23','galaxy s24','galaxy s25','galaxy s26','galaxy note20','galaxy z fold','galaxy z flip'],'Galaxy compatível com eSIM'),
