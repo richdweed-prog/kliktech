@@ -408,7 +408,14 @@ def add_inventory_batch():
 def add_inventory():
     f=request.form;plan=f.get('plan');model=f.get('model','').strip() or 'Não informado';smdp=f.get('smdp','').strip();code=f.get('activation_code','').strip();photo=request.files.get('photo')
     if plan not in catalog_prices(False) or not smdp or not code:return jsonify(error='Preencha plano, SM-DP+ e código de ativação.'),400
-    p=photo.read() if photo else None;stockdb().execute('INSERT INTO inventory(plan,model,line,ddd,photo,photo_mime,smdp,activation_code) VALUES(?,?,?,?,?,?,?,?)',(plan,model,f.get('line','').strip(),f.get('ddd','').strip(),p,photo.mimetype if photo else None,smdp,code));stockdb().commit();return jsonify(ok=True)
+    c=stockdb()
+    if c.execute('SELECT id FROM inventory WHERE activation_code=?',(code,)).fetchone():return jsonify(error='Este código de ativação/QR já está cadastrado no estoque.'),409
+    try:
+        p=photo.read() if photo else None
+        c.execute('INSERT INTO inventory(plan,model,line,ddd,photo,photo_mime,smdp,activation_code) VALUES(?,?,?,?,?,?,?,?)',(plan,model,f.get('line','').strip(),f.get('ddd','').strip(),p,photo.mimetype if photo else None,smdp,code));c.commit()
+    except UniqueViolation:
+        c.rollback();return jsonify(error='Este código de ativação/QR já está cadastrado no estoque.'),409
+    return jsonify(ok=True)
 @app.get('/api/admin/dashboard')
 @admin_required
 def dashboard():
