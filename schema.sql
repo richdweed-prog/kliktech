@@ -11,6 +11,7 @@ create table if not exists users (
   public_id text unique,
   profile_photo bytea,
   profile_photo_mime text,
+  blocked_at timestamptz,
   created_at timestamptz default current_timestamp
 );
 
@@ -34,6 +35,13 @@ create table if not exists wallet_ledger (
   provider_id text,
   amount_cents bigint not null,
   kind text,
+  created_at timestamptz default current_timestamp
+);
+
+create table if not exists access_logs (
+  user_id bigint references users(id),
+  ip text not null,
+  user_agent text,
   created_at timestamptz default current_timestamp
 );
 

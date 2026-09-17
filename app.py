@@ -7,6 +7,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.errors import UniqueViolation
 import qrcode
+from datetime import datetime
 
 BASE=Path(__file__).parent
 ENV_FILE=BASE/'.env'
@@ -83,6 +84,9 @@ def init_db():
     c=db()
     for statement in schema.split(';'):
         if statement.strip(): c.execute(statement)
+    try: c.execute('ALTER TABLE users ADD COLUMN blocked_at TIMESTAMPTZ')
+    except Exception: pass
+    c.execute('CREATE TABLE IF NOT EXISTS access_logs (user_id BIGINT, ip TEXT NOT NULL, user_agent TEXT, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)')
     email=os.environ.get('KLIKTECH_ADMIN_EMAIL','admin@kliktech.local').lower()
     pw=os.environ.get('KLIKTECH_ADMIN_PASSWORD','troque-esta-senha')
     admin=c.execute('SELECT id FROM users WHERE email=%s',(email,)).fetchone()
@@ -106,6 +110,14 @@ def init_db():
 def load():
     g.user=None
     if session.get('user_id'):g.user=ops().execute('SELECT * FROM users WHERE id=?',(session['user_id'],)).fetchone()
+    if g.user and g.user['blocked_at'] and request.endpoint not in ('login','logout'):
+        session.clear()
+        return (jsonify(error='Esta conta está bloqueada.'),403) if request.path.startswith('/api/') else (render_template('error.html',code=403,title='Conta bloqueada',message='O acesso desta conta foi bloqueado pelo administrador.'),403)
+    if g.user:
+        try:
+            ip=request.headers.get('X-Forwarded-For',request.remote_addr or 'unknown').split(',')[0].strip()[:128]
+            ops().execute('INSERT INTO access_logs(user_id,ip,user_agent) VALUES(?,?,?)',(g.user['id'],ip,(request.headers.get('User-Agent') or '')[:500]));ops().commit()
+        except Exception: pass
     if request.endpoint and request.method in ('POST','PUT','PATCH') and request.endpoint!='bravopay_webhook':
         ip=request.headers.get('X-Forwarded-For',request.remote_addr or 'unknown').split(',')[0];now=time.time();arr=[x for x in RATE.get(ip,[]) if now-x<60];arr.append(now);RATE[ip]=arr
         if len(arr)>90:return jsonify(error='Muitas tentativas. Aguarde um minuto.'),429
@@ -207,7 +219,7 @@ def profile_photo():
 def cart_add():
     d=request.get_json() or {};plan=d.get('plan')
     if plan not in catalog_prices():return jsonify(error='Plano inválido ou indisponível.'),400
-    c=ops();sid=session.get('cart_key') or secrets.token_urlsafe(18);session['cart_key']=sid;c.execute('INSERT INTO carts(session_key,plan) VALUES(?,?)',(sid,plan));c.commit();return jsonify(ok=True)
+    c=ops();sid=session.get('cart_key') or secrets.token_urlsafe(18);session['cart_key']=sid;c.execute('INSERT INTO carts(user_id,session_key,plan) VALUES(?,?,?)',(g.user['id'] if g.user else None,sid,plan));c.commit();return jsonify(ok=True)
 @app.post('/api/wallet/create-pix')
 @login_required
 def create_pix():
@@ -387,8 +399,8 @@ def admin_pix():
     except Exception: offset=0
     o=ops()
     total=o.execute('SELECT COUNT(*) n FROM wallet_charges').fetchone()['n']
-    rows=o.execute('SELECT w.id,w.provider_id,w.external_reference,w.amount_cents,w.status,w.expires_at,w.created_at,w.paid_at,u.name,u.email FROM wallet_charges w JOIN users u ON u.id=w.user_id ORDER BY w.id DESC LIMIT ? OFFSET ?',(limit,offset)).fetchall()
-    return jsonify(total=total,items=[{'id':r['id'],'provider_id':r['provider_id'],'external_reference':r['external_reference'],'amount':r['amount_cents']/100,'status':r['status'],'expires_at':r['expires_at'],'created_at':r['created_at'],'paid_at':r['paid_at'],'customer':r['name'],'email':mask_email(r['email'])} for r in rows])
+    rows=o.execute('SELECT w.id,w.user_id,w.provider_id,w.external_reference,w.amount_cents,w.status,w.expires_at,w.created_at,w.paid_at,u.public_id,u.name,u.email FROM wallet_charges w JOIN users u ON u.id=w.user_id ORDER BY w.id DESC LIMIT ? OFFSET ?',(limit,offset)).fetchall()
+    return jsonify(total=total,items=[{'id':r['id'],'user_id':r['user_id'],'account_id':r['public_id'],'provider_id':r['provider_id'],'external_reference':r['external_reference'],'amount':r['amount_cents']/100,'status':r['status'],'expires_at':r['expires_at'],'created_at':r['created_at'],'paid_at':r['paid_at'],'customer':r['name'],'email':mask_email(r['email'])} for r in rows])
 
 @app.get('/api/admin/abandoned')
 @admin_required
@@ -399,14 +411,26 @@ def admin_abandoned():
     except Exception: offset=0
     o=ops();where="c.status='active' AND c.updated_at < datetime('now','-30 minutes')"
     total=o.execute('SELECT COUNT(*) n FROM carts c WHERE '+where).fetchone()['n']
-    rows=o.execute('SELECT c.id,c.plan,c.status,c.created_at,c.updated_at,u.name,u.email FROM carts c LEFT JOIN users u ON u.id=c.user_id WHERE '+where+' ORDER BY c.updated_at DESC LIMIT ? OFFSET ?',(limit,offset)).fetchall()
+    rows=o.execute('SELECT c.id,c.user_id,c.plan,c.status,c.created_at,c.updated_at,u.public_id,u.name,u.email FROM carts c LEFT JOIN users u ON u.id=c.user_id WHERE '+where+' ORDER BY c.updated_at DESC LIMIT ? OFFSET ?',(limit,offset)).fetchall()
     return jsonify(total=total,items=[{'id':r['id'],'plan':r['plan'],'status':r['status'],'created_at':r['created_at'],'updated_at':r['updated_at'],'customer':r['name'] or 'Visitante','email':mask_email(r['email']) if r['email'] else '—'} for r in rows])
 
 @app.get('/api/admin/users')
 @admin_required
 def admin_users():
-    rows=ops().execute('SELECT public_id,name,email,is_admin,profile_photo IS NOT NULL has_photo,created_at FROM users ORDER BY id DESC').fetchall()
-    return jsonify(users=[{'id':r['public_id'],'name':r['name'],'email':r['email'],'is_admin':bool(r['is_admin']),'has_photo':bool(r['has_photo']),'created_at':r['created_at']} for r in rows])
+    o=ops();rows=o.execute('SELECT id,public_id,name,email,is_admin,blocked_at,profile_photo IS NOT NULL has_photo,created_at FROM users ORDER BY id DESC').fetchall();out=[]
+    for r in rows:
+        ips=o.execute('SELECT ip,created_at FROM access_logs WHERE user_id=? ORDER BY created_at DESC LIMIT 10',(r['id'],)).fetchall()
+        out.append({'id':r['public_id'],'name':r['name'],'email':r['email'],'is_admin':bool(r['is_admin']),'blocked':bool(r['blocked_at']),'has_photo':bool(r['has_photo']),'created_at':r['created_at'],'last_ip':ips[0]['ip'] if ips else '—','ips':[{'ip':x['ip'],'at':x['created_at']} for x in ips]})
+    return jsonify(users=out)
+
+@app.patch('/api/admin/users/<public_id>/access')
+@admin_required
+def admin_user_access(public_id):
+    d=request.get_json() or {};blocked=bool(d.get('blocked'));o=ops();row=o.execute('SELECT id,is_admin FROM users WHERE public_id=?',(public_id,)).fetchone()
+    if not row:return jsonify(error='Usuário não encontrado.'),404
+    if row['is_admin'] and blocked:return jsonify(error='Não é permitido bloquear uma conta administradora.'),409
+    o.execute('UPDATE users SET blocked_at=? WHERE id=?',(datetime.utcnow().isoformat() if blocked else None,row['id']));o.commit();return jsonify(ok=True,blocked=blocked)
+
 @app.get('/api/admin/inventory')
 @admin_required
 def inventory():
