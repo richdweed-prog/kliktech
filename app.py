@@ -384,21 +384,25 @@ def add_inventory_batch():
     for idx,r in enumerate(records,1):
         code=(r.get('activation_code') or '').strip();smdp=(r.get('smdp') or '').strip();plan=(r.get('plan') or '').strip();ddd=(r.get('ddd') or '').strip();tempo=(r.get('tempo') or '').strip();gigas=(r.get('gigas') or '').strip()
         if not plan and tempo and gigas:plan=f'{gigas} · {tempo}'
-        if not plan or (plan not in PLANS and not (tempo and gigas)):errors.append(f'Registro {idx}: informe gigas e tempo ou um plano válido.')
+        if not plan or (plan not in catalog_prices(False) and not (tempo and gigas)):errors.append(f'Registro {idx}: informe gigas e tempo ou um plano válido.')
         if not smdp:errors.append(f'Registro {idx}: SM-DP+ ausente.')
         if not code:errors.append(f'Registro {idx}: código ausente.')
         if not ddd.isdigit() or len(ddd) not in (2,3):errors.append(f'Registro {idx}: DDD inválido.')
         if code in seen:errors.append(f'Registro {idx}: código duplicado no lote.')
         seen.add(code);normalized.append({**r,'plan':plan,'ddd':ddd,'smdp':smdp,'activation_code':code})
     c=stockdb()
-    for r in records:
-        if c.execute('SELECT id FROM inventory WHERE activation_code=?',(r.get('activation_code','').strip(),)).fetchone():errors.append('Código já existente no estoque: '+r.get('activation_code',''))
+    for r in normalized:
+        if c.execute('SELECT id FROM inventory WHERE activation_code=?',(r['activation_code'],)).fetchone():errors.append('Código já existente no estoque: '+r['activation_code'])
     if errors:return jsonify(error='Validação falhou.',errors=errors),400
-    for idx,r in enumerate(normalized):
-        photo=files[idx] if files else None
-        blob=photo.read() if photo else None
-        c.execute('INSERT INTO inventory(plan,model,line,ddd,photo,photo_mime,smdp,activation_code) VALUES(?,?,?,?,?,?,?,?)',(r['plan'].strip(),r.get('model','').strip() or 'Não informado',r.get('line','').strip(),r['ddd'].strip(),blob,photo.mimetype if photo else None,r['smdp'].strip(),r['activation_code'].strip()))
-    c.commit();return jsonify(ok=True,added=len(records))
+    try:
+        for idx,r in enumerate(normalized):
+            photo=files[idx] if files else None
+            blob=photo.read() if photo else None
+            c.execute('INSERT INTO inventory(plan,model,line,ddd,photo,photo_mime,smdp,activation_code) VALUES(?,?,?,?,?,?,?,?)',(r['plan'].strip(),r.get('model','').strip() or 'Não informado',r.get('line','').strip(),r['ddd'].strip(),blob,photo.mimetype if photo else None,r['smdp'].strip(),r['activation_code'].strip()))
+        c.commit()
+    except UniqueViolation:
+        c.rollback();return jsonify(error='Código de ativação já cadastrado no estoque. Verifique o QR Code e tente novamente.'),409
+    return jsonify(ok=True,added=len(records))
 @app.post('/api/admin/inventory')
 @admin_required
 def add_inventory():
