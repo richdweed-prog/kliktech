@@ -293,57 +293,6 @@ def delete_plan(plan_id):
     if used:return jsonify(error='Este slot já possui estoque. Desative-o para não quebrar o histórico.'),409
     c.execute('DELETE FROM plan_catalog WHERE id=?',(plan_id,));c.commit();return jsonify(ok=True)
 
-@app.get('/api/plans')
-def public_plans():
-    rows=catalog_rows(True)
-    return jsonify(plans=[{'plan':r['plan'],'gigas':r['gigas'],'tempo':r['tempo'],'price':r['price_cents']/100,'featured':bool(r['featured'])} for r in rows])
-
-@app.get('/api/admin/plans')
-@admin_required
-def admin_plans():
-    rows=catalog_rows(False)
-    return jsonify(plans=[{'id':r['id'],'plan':r['plan'],'gigas':r['gigas'],'tempo':r['tempo'],'price':r['price_cents']/100,'active':bool(r['active']),'featured':bool(r['featured']),'created_at':r['created_at']} for r in rows])
-
-@app.post('/api/admin/plans')
-@admin_required
-def create_plan():
-    d=request.get_json() or {}
-    gigas=str(d.get('gigas') or '').strip().upper()
-    tempo=str(d.get('tempo') or '').strip()
-    label=str(d.get('plan') or '').strip() or f'{gigas} · {tempo}'
-    try: price_cents=int(round(float(d.get('price',0))*100))
-    except Exception: price_cents=0
-    if not gigas or not tempo or not label or price_cents<=0:return jsonify(error='Informe franquia, ciclo e preço válidos.'),400
-    try:
-        c=ops(); c.execute('INSERT INTO plan_catalog(plan,gigas,tempo,price_cents,active,featured) VALUES(?,?,?,?,?,?)',(label,gigas,tempo,price_cents,bool(d.get('active',True)),bool(d.get('featured',False))));c.commit()
-    except UniqueViolation:return jsonify(error='Já existe um slot com esse nome.'),409
-    return jsonify(ok=True,plan=label),201
-
-@app.patch('/api/admin/plans/<int:plan_id>')
-@admin_required
-def update_plan(plan_id):
-    d=request.get_json() or {}; fields=[]; values=[]
-    for key in ('gigas','tempo','plan'):
-        if key in d and str(d[key]).strip(): fields.append(key+'=?'); values.append(str(d[key]).strip())
-    if 'price' in d:
-        try: fields.append('price_cents=?'); values.append(int(round(float(d['price'])*100)))
-        except Exception:return jsonify(error='Preço inválido.'),400
-    for key in ('active','featured'):
-        if key in d: fields.append(key+'=?'); values.append(bool(d[key]))
-    if not fields:return jsonify(error='Nenhuma alteração enviada.'),400
-    values.append(plan_id);c=ops();cur=c.execute('UPDATE plan_catalog SET '+','.join(fields)+' WHERE id=?',tuple(values));c.commit()
-    if cur.rowcount!=1:return jsonify(error='Slot não encontrado.'),404
-    return jsonify(ok=True)
-
-@app.delete('/api/admin/plans/<int:plan_id>')
-@admin_required
-def delete_plan(plan_id):
-    c=ops();row=c.execute('SELECT plan FROM plan_catalog WHERE id=?',(plan_id,)).fetchone()
-    if not row:return jsonify(error='Slot não encontrado.'),404
-    used=stockdb().execute('SELECT 1 FROM inventory WHERE plan=? LIMIT 1',(row['plan'],)).fetchone()
-    if used:return jsonify(error='Este slot já possui estoque. Desative-o para não quebrar o histórico.'),409
-    c.execute('DELETE FROM plan_catalog WHERE id=?',(plan_id,));c.commit();return jsonify(ok=True)
-
 @app.get('/api/availability')
 @login_required
 def availability():
