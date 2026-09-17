@@ -47,7 +47,7 @@ def ops(): return DBProxy(db())
 def stockdb(): return DBProxy(db())
 ADMIN_PATH='ademiroputo'
 app=Flask(__name__,template_folder='templates',static_folder='static',static_url_path='/static')
-app.config.update(SECRET_KEY=os.environ.get('KLIKTECH_SECRET_KEY',secrets.token_hex(32)),SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Lax',SESSION_COOKIE_SECURE=os.environ.get('KLIKTECH_COOKIE_SECURE','0')=='1',MAX_CONTENT_LENGTH=6*1024*1024)
+app.config.update(SECRET_KEY=os.environ.get('KLIKTECH_SECRET_KEY',secrets.token_hex(32)),SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Lax',SESSION_COOKIE_SECURE=os.environ.get('KLIKTECH_COOKIE_SECURE','1')=='1',MAX_CONTENT_LENGTH=6*1024*1024)
 DEFAULT_PLANS={'30GB · 1 mês':20,'45GB · 1 mês':30,'30GB · 2 meses':40,'45GB · 2 meses':50}
 PLANS=DEFAULT_PLANS.copy()
 RATE={}
@@ -68,6 +68,15 @@ def catalog_rows(active_only=True):
 def close(_=None):
     c=g.pop('db',None)
     if c and not c.closed: c.close()
+
+@app.after_request
+def security_headers(response):
+    response.headers.setdefault('X-Content-Type-Options','nosniff')
+    response.headers.setdefault('Referrer-Policy','strict-origin-when-cross-origin')
+    response.headers.setdefault('X-Frame-Options','DENY')
+    if request.path.startswith('/api/account/') or request.path.startswith('/api/admin/'):
+        response.headers['Cache-Control']='private, no-store'
+    return response
 
 def init_db():
     schema = """
