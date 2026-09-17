@@ -314,5 +314,9 @@ def admin_users():
 @admin_required
 def inventory():
     rows=stockdb().execute('SELECT id,plan,model,line,ddd,sold_at IS NOT NULL sold,created_at FROM inventory ORDER BY id DESC').fetchall();return jsonify(items=[dict(r) for r in rows])
-if __name__=='__main__':init_db();app.run(host='0.0.0.0',port=int(os.environ.get('PORT',5000)),debug=False)
-else:init_db()
+
+if __name__=='__main__':
+    with app.app_context(): init_db()
+    app.run(host='0.0.0.0',port=int(os.environ.get('PORT',5000)),debug=False)
+else:
+    with app.app_context(): init_db()
