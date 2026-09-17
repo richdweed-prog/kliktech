@@ -112,6 +112,9 @@ def load():
     if g.user and g.user['blocked_at'] and request.endpoint not in ('login','logout'):
         session.clear()
         return (jsonify(error='Esta conta está bloqueada.'),403) if request.path.startswith('/api/') else (render_template('error.html',code=403,title='Conta bloqueada',message='O acesso desta conta foi bloqueado pelo administrador.'),403)
+    # Defesa central: nenhuma rota administrativa da API pode ser chamada sem sessão de administrador.
+    if request.path.startswith('/api/admin/') and not (g.user and g.user['is_admin']):
+        return jsonify(error='Área administrativa protegida.'),403
     if g.user:
         try:
             ip=request.headers.get('X-Forwarded-For',request.remote_addr or 'unknown').split(',')[0].strip()[:128]
@@ -282,18 +285,22 @@ def create_plan():
 @app.patch('/api/admin/plans/<int:plan_id>')
 @admin_required
 def update_plan(plan_id):
-    d=request.get_json() or {}; fields=[]; values=[]
-    for key in ('gigas','tempo','plan'):
-        if key in d and str(d[key]).strip(): fields.append(key+'=?'); values.append(str(d[key]).strip())
-    if 'price' in d:
-        try: fields.append('price_cents=?'); values.append(int(round(float(d['price'])*100)))
-        except Exception:return jsonify(error='Preço inválido.'),400
-    for key in ('active','featured'):
-        if key in d: fields.append(key+'=?'); values.append(bool(d[key]))
-    if not fields:return jsonify(error='Nenhuma alteração enviada.'),400
-    values.append(plan_id);c=ops();cur=c.execute('UPDATE plan_catalog SET '+','.join(fields)+' WHERE id=?',tuple(values));c.commit()
-    if cur.rowcount!=1:return jsonify(error='Slot não encontrado.'),404
-    return jsonify(ok=True)
+    d=request.get_json() or {};c=ops();old=c.execute('SELECT plan,gigas,tempo,price_cents,active,featured FROM plan_catalog WHERE id=?',(plan_id,)).fetchone()
+    if not old:return jsonify(error='Slot não encontrado.'),404
+    gigas=str(d.get('gigas',old['gigas']) or '').strip().upper();tempo=str(d.get('tempo',old['tempo']) or '').strip();new_plan=str(d.get('plan') or '').strip() or f'{gigas} · {tempo}'
+    try:price_cents=int(round(float(d.get('price',old['price_cents']/100))*100))
+    except Exception:return jsonify(error='Preço inválido.'),400
+    if not gigas or not tempo or not new_plan or price_cents<=0:return jsonify(error='Informe franquia, ciclo e preço válidos.'),400
+    duplicate=c.execute('SELECT id FROM plan_catalog WHERE plan=? AND id<>?',(new_plan,plan_id)).fetchone()
+    if duplicate:return jsonify(error='Já existe outro slot com esse nome. Edite o slot existente para evitar duplicação.'),409
+    try:
+        c.execute('UPDATE plan_catalog SET plan=?,gigas=?,tempo=?,price_cents=?,active=?,featured=? WHERE id=?',(new_plan,gigas,tempo,price_cents,bool(d.get('active',old['active'])),bool(d.get('featured',old['featured'])),plan_id))
+        if new_plan!=old['plan']:
+            stockdb().execute('UPDATE inventory SET plan=? WHERE plan=? AND sold_at IS NULL',(new_plan,old['plan']));stockdb().commit()
+        c.commit()
+    except UniqueViolation:
+        c.rollback();return jsonify(error='Já existe outro slot com esse nome.'),409
+    return jsonify(ok=True,plan=new_plan)
 
 @app.delete('/api/admin/plans/<int:plan_id>')
 @admin_required
@@ -407,9 +414,9 @@ def admin_abandoned():
     except Exception: limit=200
     try: offset=max(int(request.args.get('offset',0)),0)
     except Exception: offset=0
-    o=ops();where="c.status='active' AND c.updated_at < datetime('now','-30 minutes')"
-    total=o.execute('SELECT COUNT(*) n FROM carts c WHERE '+where).fetchone()['n']
-    rows=o.execute('SELECT c.id,c.user_id,c.plan,c.status,c.created_at,c.updated_at,u.public_id,u.name,u.email FROM carts c LEFT JOIN users u ON u.id=c.user_id WHERE '+where+' ORDER BY c.updated_at DESC LIMIT ? OFFSET ?',(limit,offset)).fetchall()
+    o=ops()
+    total=o.execute("SELECT COUNT(*) n FROM carts c WHERE c.status='active' AND c.updated_at < datetime('now','-30 minutes')").fetchone()['n']
+    rows=o.execute("SELECT c.id,c.user_id,c.plan,c.status,c.created_at,c.updated_at,u.public_id,u.name,u.email FROM carts c LEFT JOIN users u ON u.id=c.user_id WHERE c.status='active' AND c.updated_at < datetime('now','-30 minutes') ORDER BY c.updated_at DESC LIMIT ? OFFSET ?",(limit,offset)).fetchall()
     return jsonify(total=total,items=[{'id':r['id'],'plan':r['plan'],'status':r['status'],'created_at':r['created_at'],'updated_at':r['updated_at'],'customer':r['name'] or 'Visitante','email':mask_email(r['email']) if r['email'] else '—'} for r in rows])
 
 @app.get('/api/admin/users')
