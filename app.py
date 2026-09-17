@@ -84,8 +84,7 @@ def init_db():
     c=db()
     for statement in schema.split(';'):
         if statement.strip(): c.execute(statement)
-    try: c.execute('ALTER TABLE users ADD COLUMN blocked_at TIMESTAMPTZ')
-    except Exception: pass
+    c.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS blocked_at TIMESTAMPTZ')
     c.execute('CREATE TABLE IF NOT EXISTS access_logs (user_id BIGINT, ip TEXT NOT NULL, user_agent TEXT, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP)')
     email=os.environ.get('KLIKTECH_ADMIN_EMAIL','admin@kliktech.local').lower()
     pw=os.environ.get('KLIKTECH_ADMIN_PASSWORD','troque-esta-senha')
