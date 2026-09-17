@@ -394,7 +394,31 @@ def add_inventory():
 @app.get('/api/admin/dashboard')
 @admin_required
 def dashboard():
-    o=ops();s=stockdb();sales=o.execute('SELECT COUNT(*) n,COALESCE(SUM(price_cents),0) v FROM purchases').fetchone();pix=o.execute("SELECT COUNT(*) n,COALESCE(SUM(amount_cents),0) v FROM wallet_charges WHERE status='PENDING'").fetchone();paid=o.execute("SELECT COUNT(*) n,COALESCE(SUM(amount_cents),0) v FROM wallet_charges WHERE status='PAID'").fetchone();stock=s.execute("SELECT COUNT(*) n FROM inventory WHERE sold_at IS NULL").fetchone();ab=o.execute("SELECT COUNT(*) n FROM carts WHERE status='active' AND updated_at < datetime('now','-30 minutes')").fetchone();recent=o.execute('SELECT p.plan,p.price_cents,p.created_at,u.name,u.email FROM purchases p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 12').fetchall();return jsonify(metrics={'sales_count':sales['n'],'sales_value':sales['v']/100,'pending_pix_count':pix['n'],'pending_pix_value':pix['v']/100,'paid_topups':paid['v']/100,'available_stock':stock['n'],'abandoned_carts':ab['n']},recent=[{'plan':r['plan'],'price':r['price_cents']/100,'date':r['created_at'],'customer':r['name'],'email':mask_email(r['email'])} for r in recent])
+    o=ops();s=stockdb();sales=o.execute('SELECT COUNT(*) n,COALESCE(SUM(price_cents),0) v FROM purchases').fetchone();pix=o.execute("SELECT COUNT(*) n,COALESCE(SUM(amount_cents),0) v FROM wallet_charges WHERE status='PENDING'").fetchone();paid=o.execute("SELECT COUNT(*) n,COALESCE(SUM(amount_cents),0) v FROM wallet_charges WHERE status='PAID'").fetchone();stock=s.execute("SELECT COUNT(*) n FROM inventory WHERE sold_at IS NULL").fetchone();ab=o.execute("SELECT COUNT(*) n FROM carts WHERE status='active' AND updated_at < datetime('now','-30 minutes')").fetchone();recent=o.execute('SELECT p.plan,p.price_cents,p.created_at,u.name,u.email FROM purchases p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 12').fetchall()
+    now=datetime.utcnow();months=[]
+    for offset in range(11,-1,-1):
+        year=now.year+(now.month-1-offset)//12;month=(now.month-1-offset)%12+1;key=f'{year:04d}-{month:02d}';months.append({'key':key,'label':f'{month:02d}/{str(year)[2:]}' ,'sales':0,'revenue':0,'pix_paid':0,'pix_value':0})
+    by={m['key']:m for m in months}
+    for r in o.execute('SELECT created_at,price_cents FROM purchases').fetchall():
+        key=str(r['created_at'])[:7]
+        if key in by:by[key]['sales']+=1;by[key]['revenue']+=r['price_cents']/100
+    for r in o.execute("SELECT COALESCE(paid_at,created_at) created_at,amount_cents FROM wallet_charges WHERE status='PAID'").fetchall():
+        key=str(r['created_at'])[:7]
+        if key in by:by[key]['pix_paid']+=1;by[key]['pix_value']+=r['amount_cents']/100
+    return jsonify(metrics={'sales_count':sales['n'],'sales_value':sales['v']/100,'pending_pix_count':pix['n'],'pending_pix_value':pix['v']/100,'paid_topups':paid['v']/100,'available_stock':stock['n'],'abandoned_carts':ab['n']},monthly=months,recent=[{'plan':r['plan'],'price':r['price_cents']/100,'date':r['created_at'],'customer':r['name'],'email':mask_email(r['email'])} for r in recent])
+ESIM_COMPATIBILITY=[
+    ('apple',['iphone xr','iphone xs','iphone 11','iphone 12','iphone 13','iphone 14','iphone 15','iphone 16','iphone 17','iphone se 2','iphone se 3'],'iPhone XS/XR ou posterior'),
+    ('samsung',['galaxy s20','galaxy s21','galaxy s22','galaxy s23','galaxy s24','galaxy s25','galaxy s26','galaxy note20','galaxy z fold','galaxy z flip'],'Galaxy compatível com eSIM'),
+    ('google',['pixel 4','pixel 5','pixel 6','pixel 7','pixel 8','pixel 9','pixel 10','pixel 11'],'Google Pixel 4 ou posterior'),
+    ('motorola',['motorola razr 40','motorola razr 50','motorola razr 60','motorola edge 40','motorola edge 50'],'Motorola compatível em versões específicas'),
+]
+@app.get('/api/esim/compatibility')
+def esim_compatibility():
+    q=' '.join((request.args.get('model') or '').lower().replace('-',' ').split())
+    for brand,names,label in ESIM_COMPATIBILITY:
+        if any(name in q for name in names):return jsonify(model=request.args.get('model',''),esim_supported=True,confidence='initial',family=label,brand=brand,needs_variant_confirmation=True)
+    return jsonify(model=request.args.get('model',''),esim_supported=None,confidence='unknown',message='Modelo não localizado; confirme EID e a opção Adicionar eSIM no aparelho.')
+
 @app.get('/api/admin/pix')
 @admin_required
 def admin_pix():
