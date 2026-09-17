@@ -2,7 +2,10 @@ from flask import Flask, jsonify, request, session, render_template, g, abort, r
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from pathlib import Path
-import sqlite3, os, secrets, time, json, hmac, hashlib, urllib.request, urllib.error, io
+import os, secrets, time, json, hmac, hashlib, urllib.request, urllib.error, io
+import psycopg
+from psycopg.rows import dict_row
+from psycopg.errors import UniqueViolation
 import qrcode
 
 BASE=Path(__file__).parent
@@ -13,51 +16,70 @@ if ENV_FILE.exists():
         if line and not line.startswith('#') and '=' in line:
             key,value=line.split('=',1)
             os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
-OPS_DB=Path(os.environ.get('KLIKTECH_OPS_DB',str(BASE/'kliktech_operations.sqlite3')))
-STOCK_DB=Path(os.environ.get('KLIKTECH_STOCK_DB',str(BASE/'kliktech_stock.sqlite3')))
-OPS_DB.parent.mkdir(parents=True,exist_ok=True)
-STOCK_DB.parent.mkdir(parents=True,exist_ok=True)
+DATABASE_URL=os.environ.get('DATABASE_URL','').strip()
+if not DATABASE_URL:
+    raise RuntimeError('DATABASE_URL não configurada. Cadastre a URL do Supabase no Render.')
+
+def db():
+    connection=getattr(g,'db',None)
+    if connection is None or connection.closed:
+        connection=psycopg.connect(DATABASE_URL, row_factory=dict_row)
+        setattr(g,'db',connection)
+    return connection
+
+def _sql(query):
+    query=query.replace('?', '%s')
+    query=query.replace('BEGIN IMMEDIATE', 'BEGIN')
+    query=query.replace("datetime('now','-30 minutes')", "CURRENT_TIMESTAMP - INTERVAL '30 minutes'")
+    query=query.replace('status="PAID"', "status='PAID'")
+    query=query.replace('status="converted"', "status='converted'")
+    return query
+
+class DBProxy:
+    def __init__(self, connection): self.connection=connection
+    def execute(self, query, params=()): return self.connection.execute(_sql(query), params)
+    def commit(self): self.connection.commit()
+    def rollback(self): self.connection.rollback()
+    def close(self): pass
+
+def ops(): return DBProxy(db())
+def stockdb(): return DBProxy(db())
 ADMIN_PATH='ademiroputo'
 app=Flask(__name__,template_folder='templates',static_folder='static',static_url_path='/static')
 app.config.update(SECRET_KEY=os.environ.get('KLIKTECH_SECRET_KEY',secrets.token_hex(32)),SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Lax',SESSION_COOKIE_SECURE=os.environ.get('KLIKTECH_COOKIE_SECURE','0')=='1',MAX_CONTENT_LENGTH=6*1024*1024)
 PLANS={'30GB · 1 mês':20,'45GB · 1 mês':30,'30GB · 2 meses':40,'45GB · 2 meses':50}
 RATE={}
-def conn(path,key):
-    connection=getattr(g,key,None)
-    if connection is None:
-        connection=sqlite3.connect(path);connection.row_factory=sqlite3.Row;connection.execute('PRAGMA foreign_keys=ON');connection.execute('PRAGMA busy_timeout=5000');setattr(g,key,connection)
-    return connection
-def ops():return conn(OPS_DB,'ops')
-def stockdb():return conn(STOCK_DB,'stock')
 @app.teardown_appcontext
 def close(_=None):
-    for key in ('ops','stock'):
-        c=g.pop(key,None)
-        if c:c.close()
+    c=g.pop('db',None)
+    if c and not c.closed: c.close()
+
 def init_db():
-    o=sqlite3.connect(OPS_DB);o.executescript('''CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,email TEXT UNIQUE NOT NULL,name TEXT NOT NULL,password_hash TEXT NOT NULL,balance_cents INTEGER NOT NULL DEFAULT 0,is_admin INTEGER NOT NULL DEFAULT 0,public_id TEXT UNIQUE,profile_photo BLOB,profile_photo_mime TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);CREATE TABLE IF NOT EXISTS wallet_charges(id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL,provider_id TEXT UNIQUE NOT NULL,external_reference TEXT UNIQUE NOT NULL,amount_cents INTEGER NOT NULL,status TEXT DEFAULT 'PENDING',pix_copy_paste TEXT,expires_at TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,paid_at TEXT);CREATE TABLE IF NOT EXISTS wallet_ledger(id INTEGER PRIMARY KEY,event_id TEXT UNIQUE NOT NULL,user_id INTEGER NOT NULL,provider_id TEXT,amount_cents INTEGER NOT NULL,kind TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);CREATE TABLE IF NOT EXISTS carts(id INTEGER PRIMARY KEY,user_id INTEGER,session_key TEXT,plan TEXT NOT NULL,status TEXT DEFAULT 'active',created_at TEXT DEFAULT CURRENT_TIMESTAMP,updated_at TEXT DEFAULT CURRENT_TIMESTAMP);CREATE TABLE IF NOT EXISTS purchases(id INTEGER PRIMARY KEY,user_id INTEGER NOT NULL,inventory_id INTEGER NOT NULL,plan TEXT NOT NULL,price_cents INTEGER NOT NULL,status TEXT DEFAULT 'approved',created_at TEXT DEFAULT CURRENT_TIMESTAMP);CREATE TABLE IF NOT EXISTS admin_events(id INTEGER PRIMARY KEY,event TEXT,detail TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);''');email=os.environ.get('KLIKTECH_ADMIN_EMAIL','admin@kliktech.local').lower();pw=os.environ.get('KLIKTECH_ADMIN_PASSWORD','troque-esta-senha')
-    cols={row[1] for row in o.execute('PRAGMA table_info(users)').fetchall()}
-    if 'public_id' not in cols:o.execute('ALTER TABLE users ADD COLUMN public_id TEXT')
-    if 'profile_photo' not in cols:o.execute('ALTER TABLE users ADD COLUMN profile_photo BLOB')
-    if 'profile_photo_mime' not in cols:o.execute('ALTER TABLE users ADD COLUMN profile_photo_mime TEXT')
-    existing_ids={row[0] for row in o.execute('SELECT public_id FROM users WHERE public_id IS NOT NULL').fetchall()}
-    for row in o.execute('SELECT id FROM users WHERE public_id IS NULL').fetchall():
-        candidate=f'{secrets.randbelow(90000000)+10000000:08d}'
-        while candidate in existing_ids:candidate=f'{secrets.randbelow(90000000)+10000000:08d}'
-        o.execute('UPDATE users SET public_id=? WHERE id=?',(candidate,row[0]));existing_ids.add(candidate)
-    admin=o.execute('SELECT id FROM users WHERE email=?',(email,)).fetchone()
+    schema = """
+    CREATE TABLE IF NOT EXISTS users (id BIGSERIAL PRIMARY KEY,email TEXT UNIQUE NOT NULL,name TEXT NOT NULL,password_hash TEXT NOT NULL,balance_cents BIGINT NOT NULL DEFAULT 0,is_admin INTEGER NOT NULL DEFAULT 0,public_id TEXT UNIQUE,profile_photo BYTEA,profile_photo_mime TEXT,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS wallet_charges (id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id),provider_id TEXT UNIQUE NOT NULL,external_reference TEXT UNIQUE NOT NULL,amount_cents BIGINT NOT NULL,status TEXT DEFAULT 'PENDING',pix_copy_paste TEXT,expires_at TEXT,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,paid_at TIMESTAMPTZ);
+    CREATE TABLE IF NOT EXISTS wallet_ledger (id BIGSERIAL PRIMARY KEY,event_id TEXT UNIQUE NOT NULL,user_id BIGINT NOT NULL REFERENCES users(id),provider_id TEXT,amount_cents BIGINT NOT NULL,kind TEXT,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS carts (id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES users(id),session_key TEXT,plan TEXT NOT NULL,status TEXT DEFAULT 'active',created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS purchases (id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id),inventory_id BIGINT NOT NULL,plan TEXT NOT NULL,price_cents BIGINT NOT NULL,status TEXT DEFAULT 'approved',created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS admin_events (id BIGSERIAL PRIMARY KEY,event TEXT,detail TEXT,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS inventory (id BIGSERIAL PRIMARY KEY,plan TEXT NOT NULL,model TEXT NOT NULL,line TEXT,ddd TEXT,photo BYTEA,photo_mime TEXT,smdp TEXT NOT NULL,activation_code TEXT NOT NULL UNIQUE,sold_at TIMESTAMPTZ,sold_to BIGINT,created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+    """
+    c=db()
+    for statement in schema.split(';'):
+        if statement.strip(): c.execute(statement)
+    email=os.environ.get('KLIKTECH_ADMIN_EMAIL','admin@kliktech.local').lower()
+    pw=os.environ.get('KLIKTECH_ADMIN_PASSWORD','troque-esta-senha')
+    admin=c.execute('SELECT id FROM users WHERE email=%s',(email,)).fetchone()
     if admin:
-        o.execute('UPDATE users SET name=?,password_hash=?,is_admin=1 WHERE id=?',('Administrador',generate_password_hash(pw),admin[0]))
+        c.execute('UPDATE users SET name=%s,password_hash=%s,is_admin=1 WHERE id=%s',('Administrador',generate_password_hash(pw),admin['id']))
     else:
-        existing=o.execute('SELECT id FROM users WHERE is_admin=1 ORDER BY id LIMIT 1').fetchone()
+        existing=c.execute('SELECT id FROM users WHERE is_admin=1 ORDER BY id LIMIT 1').fetchone()
         if existing:
-            o.execute('UPDATE users SET email=?,name=?,password_hash=?,is_admin=1 WHERE id=?',(email,'Administrador',generate_password_hash(pw),existing[0]))
+            c.execute('UPDATE users SET email=%s,name=%s,password_hash=%s,is_admin=1 WHERE id=%s',(email,'Administrador',generate_password_hash(pw),existing['id']))
         else:
-            o.execute('INSERT INTO users(email,name,password_hash,is_admin) VALUES(?,?,?,1)',(email,'Administrador',generate_password_hash(pw)))
-    o.commit();o.close();s=sqlite3.connect(STOCK_DB);s.execute('''CREATE TABLE IF NOT EXISTS inventory(id INTEGER PRIMARY KEY,plan TEXT NOT NULL,model TEXT NOT NULL,line TEXT,ddd TEXT,photo BLOB,photo_mime TEXT,smdp TEXT NOT NULL,activation_code TEXT NOT NULL,sold_at TEXT,sold_to INTEGER,created_at TEXT DEFAULT CURRENT_TIMESTAMP)''');s.commit()
-    stock_cols={row[1] for row in s.execute('PRAGMA table_info(inventory)').fetchall()}
-    if 'ddd' not in stock_cols:s.execute('ALTER TABLE inventory ADD COLUMN ddd TEXT')
-    s.commit();s.close()
+            c.execute('INSERT INTO users(email,name,password_hash,is_admin) VALUES(%s,%s,%s,1)',(email,'Administrador',generate_password_hash(pw)))
+    c.commit()
+
 @app.before_request
 def load():
     g.user=None
@@ -81,13 +103,13 @@ def store():return render_template('index.html')
 @app.get('/healthz')
 def healthz():return jsonify(status='ok',service='kliktech-esim')
 def admin_page_or_forbid():
-    if not g.user:return redirect('/cliente')
+    if not g.user:return render_template('admin_login.html')
     if not g.user['is_admin']:abort(403)
     return render_template('admin.html')
 @app.get('/admin')
 def hidden_admin_block():abort(404)
 @app.get('/ademiroputo')
-def admin_root():return redirect('/ademiroputo/dashboard')
+def admin_root():return admin_page_or_forbid()
 @app.get('/ademiroputo/dashboard')
 def admin_dashboard_page():return admin_page_or_forbid()
 @app.get('/ademiroputo/esims')
@@ -131,8 +153,8 @@ def register():
     try:
         c=ops();public_id=f'{secrets.randbelow(90000000)+10000000:08d}'
         while c.execute('SELECT 1 FROM users WHERE public_id=?',(public_id,)).fetchone():public_id=f'{secrets.randbelow(90000000)+10000000:08d}'
-        cur=c.execute('INSERT INTO users(email,name,password_hash,public_id) VALUES(?,?,?,?)',(email,name,generate_password_hash(pw),public_id));c.commit();session.clear();session['user_id']=cur.lastrowid;return jsonify(user=safe_user(c.execute('SELECT * FROM users WHERE id=?',(cur.lastrowid,)).fetchone()))
-    except sqlite3.IntegrityError:return jsonify(error='Este e-mail já está cadastrado.'),409
+        cur=c.execute('INSERT INTO users(email,name,password_hash,public_id) VALUES(%s,%s,%s,%s) RETURNING id',(email,name,generate_password_hash(pw),public_id));new_id=cur.fetchone()['id'];c.commit();session.clear();session['user_id']=new_id;return jsonify(user=safe_user(c.execute('SELECT * FROM users WHERE id=%s',(new_id,)).fetchone()))
+    except UniqueViolation:return jsonify(error='Este e-mail já está cadastrado.'),409
 @app.post('/api/auth/login')
 def login():
     d=request.get_json() or {};u=ops().execute('SELECT * FROM users WHERE email=?',(d.get('email','').strip().lower(),)).fetchone()
@@ -211,13 +233,13 @@ def purchase():
     if not price:return jsonify(error='Plano inválido.'),400
     c=ops();s=stockdb()
     try:
-        c.execute('BEGIN IMMEDIATE');s.execute('BEGIN IMMEDIATE');u=c.execute('SELECT * FROM users WHERE id=?',(g.user['id'],)).fetchone();item=s.execute("SELECT * FROM inventory WHERE plan=? AND sold_at IS NULL AND ddd=COALESCE(NULLIF(?, ''), ddd) ORDER BY id LIMIT 1",(plan,ddd)).fetchone()
+        c.execute('BEGIN');u=c.execute('SELECT * FROM users WHERE id=?',(g.user['id'],)).fetchone();item=s.execute("SELECT * FROM inventory WHERE plan=? AND sold_at IS NULL AND ddd=COALESCE(NULLIF(?, ''), ddd) ORDER BY id LIMIT 1",(plan,ddd)).fetchone()
         if not item:
             c.rollback();s.rollback();return jsonify(error='Sem eSIM disponível para este plano/DDD.'),409
         if u['balance_cents']<price*100:
             c.rollback();s.rollback();return jsonify(error='Saldo insuficiente para este plano.'),402
-        s.execute('UPDATE inventory SET sold_at=CURRENT_TIMESTAMP,sold_to=? WHERE id=? AND sold_at IS NULL',(u['id'],item['id']))
-        if s.execute('SELECT changes()').fetchone()[0]!=1:
+        updated=s.execute('UPDATE inventory SET sold_at=CURRENT_TIMESTAMP,sold_to=? WHERE id=? AND sold_at IS NULL',(u['id'],item['id']))
+        if updated.rowcount != 1:
             c.rollback();s.rollback();return jsonify(error='Este eSIM acabou de ser reservado. Escolha outro.'),409
         c.execute('UPDATE users SET balance_cents=balance_cents-? WHERE id=?',(price*100,u['id']));c.execute('UPDATE carts SET status="converted",updated_at=CURRENT_TIMESTAMP WHERE session_key=? AND plan=? AND status="active"',(session.get('cart_key',''),plan));c.execute('INSERT INTO purchases(user_id,inventory_id,plan,price_cents) VALUES(?,?,?,?)',(u['id'],item['id'],plan,price*100));s.commit();c.commit();return jsonify(ok=True)
     except Exception:c.rollback();s.rollback();raise
