@@ -258,7 +258,12 @@ def bravopay_webhook():
     c.commit();return jsonify(ok=True)
 @app.get('/api/plans')
 def public_plans():
+    # A vitrine pública só anuncia o que pode ser comprado agora:
+    # plano cadastrado como ativo e pelo menos um slot/eSIM não vendido.
     rows=catalog_rows(True)
+    available=stockdb().execute('SELECT DISTINCT plan FROM inventory WHERE sold_at IS NULL').fetchall()
+    available_plans={r['plan'] for r in available}
+    rows=[r for r in rows if r['plan'] in available_plans]
     return jsonify(plans=[{'plan':r['plan'],'gigas':r['gigas'],'tempo':r['tempo'],'price':r['price_cents']/100,'featured':bool(r['featured'])} for r in rows])
 
 @app.get('/api/admin/plans')
