@@ -378,6 +378,30 @@ def add_inventory():
 @admin_required
 def dashboard():
     o=ops();s=stockdb();sales=o.execute('SELECT COUNT(*) n,COALESCE(SUM(price_cents),0) v FROM purchases').fetchone();pix=o.execute("SELECT COUNT(*) n,COALESCE(SUM(amount_cents),0) v FROM wallet_charges WHERE status='PENDING'").fetchone();paid=o.execute("SELECT COUNT(*) n,COALESCE(SUM(amount_cents),0) v FROM wallet_charges WHERE status='PAID'").fetchone();stock=s.execute("SELECT COUNT(*) n FROM inventory WHERE sold_at IS NULL").fetchone();ab=o.execute("SELECT COUNT(*) n FROM carts WHERE status='active' AND updated_at < datetime('now','-30 minutes')").fetchone();recent=o.execute('SELECT p.plan,p.price_cents,p.created_at,u.name,u.email FROM purchases p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 12').fetchall();return jsonify(metrics={'sales_count':sales['n'],'sales_value':sales['v']/100,'pending_pix_count':pix['n'],'pending_pix_value':pix['v']/100,'paid_topups':paid['v']/100,'available_stock':stock['n'],'abandoned_carts':ab['n']},recent=[{'plan':r['plan'],'price':r['price_cents']/100,'date':r['created_at'],'customer':r['name'],'email':mask_email(r['email'])} for r in recent])
+@app.get('/api/admin/pix')
+@admin_required
+def admin_pix():
+    try: limit=min(max(int(request.args.get('limit',200)),1),500)
+    except Exception: limit=200
+    try: offset=max(int(request.args.get('offset',0)),0)
+    except Exception: offset=0
+    o=ops()
+    total=o.execute('SELECT COUNT(*) n FROM wallet_charges').fetchone()['n']
+    rows=o.execute('SELECT w.id,w.provider_id,w.external_reference,w.amount_cents,w.status,w.expires_at,w.created_at,w.paid_at,u.name,u.email FROM wallet_charges w JOIN users u ON u.id=w.user_id ORDER BY w.id DESC LIMIT ? OFFSET ?',(limit,offset)).fetchall()
+    return jsonify(total=total,items=[{'id':r['id'],'provider_id':r['provider_id'],'external_reference':r['external_reference'],'amount':r['amount_cents']/100,'status':r['status'],'expires_at':r['expires_at'],'created_at':r['created_at'],'paid_at':r['paid_at'],'customer':r['name'],'email':mask_email(r['email'])} for r in rows])
+
+@app.get('/api/admin/abandoned')
+@admin_required
+def admin_abandoned():
+    try: limit=min(max(int(request.args.get('limit',200)),1),500)
+    except Exception: limit=200
+    try: offset=max(int(request.args.get('offset',0)),0)
+    except Exception: offset=0
+    o=ops();where="c.status='active' AND c.updated_at < datetime('now','-30 minutes')"
+    total=o.execute('SELECT COUNT(*) n FROM carts c WHERE '+where).fetchone()['n']
+    rows=o.execute('SELECT c.id,c.plan,c.status,c.created_at,c.updated_at,u.name,u.email FROM carts c LEFT JOIN users u ON u.id=c.user_id WHERE '+where+' ORDER BY c.updated_at DESC LIMIT ? OFFSET ?',(limit,offset)).fetchall()
+    return jsonify(total=total,items=[{'id':r['id'],'plan':r['plan'],'status':r['status'],'created_at':r['created_at'],'updated_at':r['updated_at'],'customer':r['name'] or 'Visitante','email':mask_email(r['email']) if r['email'] else '—'} for r in rows])
+
 @app.get('/api/admin/users')
 @admin_required
 def admin_users():
