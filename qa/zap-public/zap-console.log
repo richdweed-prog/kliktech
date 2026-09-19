@@ -1,0 +1,10 @@
+Found Java version 21.0.11
+Available memory: 12002 MB
+Using JVM args: -Xmx3000m
+No check for updates for over 3 month - add-ons may well be out of date
+Accessing URL
+Using traditional spider
+Active scanning
+[===========         ] 55% |[================    ] 84% /[====================] 100%
+Attack complete
+Writing results to /home/ubuntu/kliktech/qa/zap-public/zap-report.html

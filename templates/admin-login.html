@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KlikTech | Acesso administrativo</title>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="stylesheet" href="/static/css/admin.css">
+  <script src="/static/js/admin-login.js" defer></script>
+</head>
+<body class="admin-page">
+  <main class="admin-login-shell">
+    <section class="admin-login-card" aria-labelledby="admin-login-title">
+      <p class="admin-muted">KlikTech · área restrita</p>
+      <h1 id="admin-login-title">Acesso administrativo</h1>
+      <form class="admin-form" id="admin-login-form">
+        <label for="admin-email">E-mail administrativo</label>
+        <input class="admin-input" id="admin-email" name="email" type="email" autocomplete="username" required>
+        <label for="admin-password">Senha</label>
+        <input class="admin-input" id="admin-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="admin-button" type="submit">Continuar</button>
+      </form>
+      <form class="admin-form" id="admin-2fa-form" hidden>
+        <label for="admin-2fa-code">Código do autenticador</label>
+        <input class="admin-input" id="admin-2fa-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
+        <button class="admin-button" type="submit">Validar 2FA</button>
+      </form>
+      <p class="admin-form-message" id="admin-login-message" role="alert"></p>
+      <p class="admin-help">O painel exige senha e código TOTP. Se o 2FA não estiver configurado no servidor, o acesso é bloqueado.</p>
+    </section>
+  </main>
+</body>
+</html>

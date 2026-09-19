@@ -4,5 +4,6 @@
 *.sqlite3-wal
 .env
 .env.*
+!.env.example
 __pycache__/
 *.pyc

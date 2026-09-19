@@ -1,62 +1,43 @@
-# Deploy do SITE ESIM no GitHub + Render
+# Deploy e operação da KlikTech
 
-O projeto está preparado para ser versionado no GitHub e executado como serviço Python no Render. O processo usa Gunicorn em produção, health check em `/healthz`, uma única instância para manter a consistência do SQLite e um disco persistente montado em `/var/data`.
+A aplicação roda como Flask/Gunicorn e usa PostgreSQL como fonte única de verdade para usuários, saldo, estoque, pedidos e ledger de pagamentos. O backend executa apenas inicialização idempotente das tabelas básicas; em produção, as migrações versionadas devem ser aplicadas antes do deploy.
 
-## Escolha de hospedagem
+## Checklist de deploy
 
-| Opção | Resultado | Trade-off | Custo/limite |
-|---|---|---|---|
-| Render Starter + disco persistente | Serviço ligado continuamente, deploy automático, HTTPS, banco SQLite preservado entre deploys | Uma única instância; para crescer horizontalmente, migrar o banco para PostgreSQL | Plano pago do Render + disco conforme a conta Render |
-| Render Free | Bom para demonstração e testes | Pode dormir por inatividade, não é 24/7 e não deve ser usado para dados de produção | Gratuito, mas sem garantia de disponibilidade contínua |
+1. Crie um banco PostgreSQL de produção e restrinja o acesso por rede e credenciais dedicadas.
+2. Copie `.env.example` para o gerenciador de segredos do provedor. Nunca versione `.env`.
+3. Gere `KLIKTECH_SECRET_KEY` com pelo menos 32 bytes aleatórios.
+4. Defina `KLIKTECH_ADMIN_PASSWORD` com uma senha exclusiva e `KLIKTECH_ADMIN_TOTP_SECRET` com uma chave Base32 exclusiva. Cadastre a mesma chave em um autenticador TOTP.
+5. Defina `KLIKTECH_ADMIN_PATH` com um caminho administrativo não óbvio. O caminho não substitui senha e 2FA.
+6. Defina `KLIKTECH_PUBLIC_ORIGIN` com a origem HTTPS exata do domínio público, sem barra final.
+7. Defina o CNPJ em `KLIKTECH_CNPJ` para que ele apareça no rodapé e mantenha as páginas de Termos, Privacidade e Reembolso revisadas pelo responsável legal.
+8. Aplique `schema.sql`, `migrations/001_initial.sql` e `migrations/002_security.sql` em ordem. Em uma base já existente, valide duplicidades de `purchases.inventory_id` antes de aplicar a restrição única.
+9. Configure no provedor de pagamentos a URL `https://seu-dominio/webhooks/bravopay` e o mesmo `BRAVOPAY_WEBHOOK_SECRET` do ambiente.
+10. Faça deploy com `gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app`.
+11. Valide `/healthz`, `/robots.txt`, `/sitemap.xml`, criação de conta, login, 2FA administrativo, compra concorrente e entrega de QR Code em um ambiente de homologação.
+12. Habilite HTTPS, logs de erro sem dados de ativação e alertas para falhas de webhook, banco e limite de disco.
 
-Para o pedido de disponibilidade online 24/7, o arquivo `render.yaml` já escolhe a primeira opção (`plan: starter`) e configura o disco persistente de 1 GB.
+## Configuração Render
 
-## Publicar no GitHub
+O `render.yaml` remove o disco SQLite legado e declara PostgreSQL, 2FA, origem pública, CNPJ e os segredos de pagamento como variáveis. O valor de `DATABASE_URL` deve ser obtido do banco gerenciado e não deve aparecer em logs, tickets ou código do navegador.
 
-Crie um repositório vazio no GitHub e execute os comandos abaixo a partir da pasta `SITE ESIM`:
+## Rotação de segredos
 
-```bash
-git init
-git branch -M main
-git add .
-git commit -m "feat: redesign 3d e deploy de producao"
-git remote add origin https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
-git push -u origin main
-```
+A rotação deve ser planejada e registrada. Gere uma nova `KLIKTECH_SECRET_KEY`, faça deploy controlado e aceite a invalidação das sessões existentes. Para trocar a senha administrativa, altere `KLIKTECH_ADMIN_PASSWORD`, faça deploy e valide o login com 2FA. Para trocar o autenticador TOTP, cadastre a nova chave antes da janela de troca e remova a chave antiga logo após a validação. Para trocar o webhook, atualize `BRAVOPAY_WEBHOOK_SECRET` no provedor e na aplicação em uma janela curta; eventos inválidos devem continuar sendo rejeitados. Para trocar `DATABASE_URL`, crie o novo usuário com menor privilégio necessário, teste a conexão, altere a variável e revogue a credencial anterior após confirmar saúde e consultas.
 
-O `.gitignore` impede o envio do `.env`, dos bancos SQLite locais, do cache Python e das capturas de QA. O arquivo `.env.example` documenta as variáveis sem conter credenciais.
-
-## Publicar no Render
-
-No painel do Render, escolha **New → Blueprint** e conecte o repositório GitHub. O Render detectará o `render.yaml`. Confirme o serviço `kliktech-esim`, o plano Starter e o disco persistente. Depois do primeiro deploy, abra o endereço HTTPS gerado e confirme que `/healthz` responde com `{"status":"ok","service":"kliktech-esim"}`.
-
-As variáveis marcadas com `sync: false` no Blueprint devem ser preenchidas exclusivamente no painel do Render: `DATABASE_URL`, `KLIKTECH_ADMIN_EMAIL`, `KLIKTECH_ADMIN_PASSWORD`, `BRAVOPAY_API_KEY` e `BRAVOPAY_WEBHOOK_SECRET`. A `DATABASE_URL` contém a credencial de conexão do banco e nunca deve ser colocada no GitHub, em HTML, em JavaScript ou em mensagens de log. A `KLIKTECH_SECRET_KEY` é gerada pelo Render. Não faça commit de valores reais dessas variáveis.
-
-## BravoPay
-
-Depois que o domínio do Render estiver disponível, a URL do webhook deverá ser:
-
-```text
-https://SEU-SERVICO.onrender.com/webhooks/bravopay
-```
-
-Configure essa URL no painel da BravoPay junto com o segredo correspondente. O fluxo de recarga Pix já existe no backend; a configuração de produção fica separada por variável de ambiente.
-
-## Persistência e escala
-
-O banco atual é SQLite. O disco persistente evita a perda dos usuários, saldo, compras e estoque durante novos deploys, mas o serviço deve permanecer com uma instância enquanto utilizar SQLite. Caso o volume cresça ou seja necessário executar várias instâncias, o próximo passo é migrar as tabelas para PostgreSQL e remover a dependência do disco local.
+Nunca reutilize segredos entre desenvolvimento, homologação e produção. Não envie valores reais em issues, commits, screenshots ou relatórios de teste.
 
 ## Comandos locais
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-python app.py
+python3 -m pip install -r requirements.txt
+sudo pg_ctlcluster 16 main start
+PYTHONPATH=. python3 -m pytest -q
+KLIKTECH_COOKIE_SECURE=0 PORT=5000 python3 app.py
 ```
 
-Para simular o processo de produção localmente:
+Para teste de produção local:
 
 ```bash
-PORT=5000 gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app
+KLIKTECH_COOKIE_SECURE=0 PORT=5000 gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app
 ```

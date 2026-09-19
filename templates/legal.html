@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} | KlikTech</title>
+  <meta name="description" content="{{ heading }} da KlikTech.">
+  <link rel="canonical" href="{{ request.url }}">
+  <link rel="stylesheet" href="/static/css/minimal.css">
+</head>
+<body>
+  <main class="minimal-shell">
+    <a class="minimal-brand" href="/"><span class="minimal-mark" aria-hidden="true">K</span>KlikTech</a>
+    <article class="minimal-card legal-content">
+      <p class="minimal-code">KLIKTECH</p>
+      <h1>{{ heading }}</h1>
+      {% if title == 'Termos de uso' %}
+      <p>Estes termos descrevem as regras de utilização da loja KlikTech e da área privada do cliente.</p>
+      <h2>Conta e segurança</h2>
+      <p>O titular deve fornecer dados verdadeiros, proteger sua senha e não compartilhar QR Codes ou códigos de ativação. A conta pode ser bloqueada diante de indícios de abuso ou fraude.</p>
+      <h2>Planos e entrega</h2>
+      <p>Planos, preços e disponibilidade são exibidos conforme o catálogo e o estoque vigentes. A entrega dos dados de ativação ocorre na área privada após a aprovação da compra.</p>
+      <h2>Suporte</h2>
+      <p>Para suporte, use os canais oficiais informados no site. Nunca envie sua senha.</p>
+      {% elif title == 'Privacidade e LGPD' %}
+      <p>A KlikTech trata os dados necessários para cadastro, autenticação, prevenção a fraude, processamento de pagamentos, entrega do eSIM e atendimento.</p>
+      <h2>Dados tratados</h2>
+      <p>Podem ser tratados nome, e-mail, registros de acesso, dados da compra e dados técnicos necessários à ativação. Senhas são armazenadas somente em formato derivado por hash.</p>
+      <h2>Direitos do titular</h2>
+      <p>O titular pode solicitar confirmação de tratamento, acesso, correção e informações sobre seus dados pelos canais oficiais de atendimento. Registros de segurança podem ser mantidos pelo período necessário à proteção do serviço e ao cumprimento de obrigações legais.</p>
+      <h2>Segurança</h2>
+      <p>A área privada aplica controles de sessão, proteção CSRF, cabeçalhos de segurança, autorização por titular e restrição de dados de ativação.</p>
+      {% else %}
+      <p>A política de reembolso depende do estado do pedido, da ativação do eSIM e das regras aplicáveis ao meio de pagamento.</p>
+      <h2>Antes da ativação</h2>
+      <p>Se o pedido ainda não foi ativado e houver erro operacional comprovado, solicite análise ao suporte com o número do pedido.</p>
+      <h2>Após a ativação</h2>
+      <p>Por se tratar de produto digital de instalação única, pedidos com código de ativação utilizado podem não ser elegíveis a reembolso, salvo obrigação legal ou falha comprovada do serviço.</p>
+      <h2>Solicitação</h2>
+      <p>Envie a solicitação pelos canais oficiais. A análise considera os registros do pedido, o status do código e o histórico do atendimento.</p>
+      {% endif %}
+      <p><a href="/">Voltar para a loja</a></p>
+    </article>
+  </main>
+</body>
+</html>

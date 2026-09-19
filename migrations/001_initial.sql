@@ -1,5 +1,4 @@
--- KlikTech — esquema PostgreSQL/Supabase.
--- Produção: aplicar as migrações em ordem. O backend também executa a criação idempotente das tabelas básicas.
+-- KlikTech — migração inicial PostgreSQL.
 
 CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,

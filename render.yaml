@@ -9,18 +9,12 @@ services:
     healthCheckPath: /healthz
     autoDeploy: true
     numInstances: 1
-    disk:
-      name: kliktech-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.3
-      - key: KLIKTECH_OPS_DB
-        value: /var/data/kliktech_operations.sqlite3
-      - key: KLIKTECH_STOCK_DB
-        value: /var/data/kliktech_stock.sqlite3
       - key: KLIKTECH_COOKIE_SECURE
+        value: "1"
+      - key: KLIKTECH_TRUST_PROXY
         value: "1"
       - key: KLIKTECH_SECRET_KEY
         generateValue: true
@@ -29,6 +23,16 @@ services:
       - key: KLIKTECH_ADMIN_EMAIL
         sync: false
       - key: KLIKTECH_ADMIN_PASSWORD
+        sync: false
+      - key: KLIKTECH_ADMIN_TOTP_SECRET
+        sync: false
+      - key: KLIKTECH_ADMIN_TOTP_ISSUER
+        value: KlikTech
+      - key: KLIKTECH_ADMIN_PATH
+        sync: false
+      - key: KLIKTECH_PUBLIC_ORIGIN
+        sync: false
+      - key: KLIKTECH_CNPJ
         sync: false
       - key: BRAVOPAY_API_KEY
         sync: false
