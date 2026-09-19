@@ -2,7 +2,7 @@
 
 ## Resultado executivo
 
-A suíte de aceitação executada contra PostgreSQL 16 local foi concluída com **10 testes aprovados**. O Lighthouse final, executado na origem HTTPS pública, mediu **100 em Performance, 95 em Acessibilidade, 100 em Boas práticas e 100 em SEO**. O relatório HTML e JSON está em `qa/lighthouse-final.report.html` e `qa/lighthouse-final.report.json`. O ZAP Quick Scan executado na URL HTTPS pública terminou com **0 High, 0 Medium, 0 Low e 6 Informational**.
+A suíte de aceitação executada contra PostgreSQL 16 local foi concluída com **10 testes aprovados**. O Lighthouse final, executado na origem HTTPS pública com o design original restaurado, mediu **97 em Performance, 99 em Acessibilidade, 93 em Boas práticas e 100 em SEO**. O relatório HTML e JSON está em `qa/lighthouse-final.report.html` e `qa/lighthouse-final.report.json`. O ZAP Quick Scan executado na URL HTTPS pública terminou com **0 High, 0 Medium, 0 Low e 6 Informational**.
 
 ## Critérios automatizados
 
@@ -34,9 +34,9 @@ O teste de concorrência usa vinte clientes Flask e vinte conexões PostgreSQL i
 
 ## Auditoria de superfície
 
-Os templates ativos não contêm `<style>`, scripts inline, atributos `style=` ou `!important`. O site público carrega `static/css/public.css` e `static/js/public.js`. O admin carrega `static/css/admin.css` e `static/js/admin.js`. Erros e páginas legais carregam apenas `static/css/minimal.css`.
+Os templates ativos não contêm `<style>`, scripts inline, atributos `style=`, handlers `onclick` ou `!important`. O design original público carrega `static/css/legacy-inline.css`, `static/css/legacy-3d.css` e `static/js/legacy-public.js`; o admin carrega `static/css/admin.css` e `static/js/admin-login.js`/`static/js/admin.js`. Erros e páginas legais carregam apenas `static/css/minimal.css`.
 
-A verificação visual headless em 390×844 px e 1440×1000 px não mostrou overflow horizontal no hero, e confirmou o menu mobile, o CTA, o cartão eSIM e a navegação desktop. Também foi verificado que HTTP responde 308 para a origem HTTPS e HTTPS emite `Secure`, `HttpOnly`, HSTS e CSP.
+A verificação visual headless em 390×844 px e 1440×1000 px confirmou o design original: menu mobile, esfera orbital, cartão eSIM 3D, CTA, navegação desktop e ausência de overflow horizontal aparente. Também foi verificado que HTTP responde 308 para a origem HTTPS e HTTPS emite `Secure`, `HttpOnly`, HSTS e CSP.
 
 ## ZAP
 

@@ -1,9 +1,11 @@
 # Verificação visual
 
-As capturas finais foram geradas em Chromium headless contra a origem HTTPS pública temporária do sandbox após a restauração da camada visual antiga.
+As capturas finais foram geradas em Chromium headless contra a origem HTTPS pública temporária do sandbox, após restaurar o `templates/index.html` e a camada visual do commit original.
 
-A captura mobile em 390×844 px mostra o cabeçalho escuro com marca KlikTech, menu compacto, cartão eSIM orbital em gradiente ciano/violeta, tipografia grande, botões neon e ausência de overflow horizontal aparente.
+A captura mobile em 390×844 px mostra o cabeçalho compacto, marca KlicTech Sem Fronteiras, menu hambúrguer, esfera orbital com cartão eSIM 3D, hero original, CTA de compatibilidade e ausência de overflow horizontal aparente.
 
-A captura desktop em 1440×1000 px mostra a navegação horizontal, hero em duas colunas, cartão eSIM 3D inclinado com brilho, paleta escura neon, CTA gradiente e hierarquia tipográfica correspondente ao design anterior. O markup continua sem CSS/JS inline e a navegação continua usando os handlers seguros do JavaScript atual.
+A captura desktop em 1440×1000 px mostra a navegação horizontal original, hero em duas colunas, composição orbital completa, tipografia grande, gradientes neon, ações originais e espaçamento do design anterior.
+
+Os estilos foram externalizados para `static/css/legacy-inline.css` e `static/css/legacy-3d.css`; os handlers foram substituídos por `data-legacy-action` e JavaScript externo com CSRF/try-catch.
 
 Arquivos: `qa/home-mobile.png` e `qa/home-desktop.png`.
