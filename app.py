@@ -570,18 +570,27 @@ if ADMIN_PATH != "ademiroputo":
     @app.get("/ademiroputo/dashboard")
     def legacy_admin_dashboard_page():
         if not g.user or not g.user.get("is_admin") or not configured_admin_2fa() or not session.get("admin_2fa_ok"):
-            return redirect(f"/{ADMIN_PATH}")
+            return render_template("admin-login.html", csrf_token=csrf_token())
         return render_template("admin.html", csrf_token=csrf_token())
+
+
+for _admin_base in {ADMIN_PATH, "ademiroputo"}:
+    for _admin_section in ("esims", "estoque", "pedidos", "clientes", "configuracoes"):
+        app.add_url_rule(
+            f"/{_admin_base}/{_admin_section}",
+            endpoint=f"admin_legacy_{_admin_base}_{_admin_section}",
+            view_func=admin_root,
+        )
 
 
 @app.get("/cliente")
 def client_root():
-    return redirect("/")
+    return redirect("/cliente/dashboard")
 
 
 @app.get("/cliente/<path:_page>")
 def client_page(_page: str):
-    return redirect("/")
+    return render_template("index.html", csrf_token=csrf_token())
 
 
 @app.errorhandler(403)

@@ -249,3 +249,7 @@ document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { 
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false); });
   setMenu(false);
 })();
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof loadClientMe === 'function') loadClientMe().catch(() => {});
+});
