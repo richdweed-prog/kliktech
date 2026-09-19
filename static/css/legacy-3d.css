@@ -826,3 +826,37 @@ img, svg, video { max-width: 100%; height: auto; }
   .app-codes, .client-codes { overflow-wrap: anywhere; word-break: break-word; }
   .app-codes img, .client-codes img { display: block; margin-inline: auto; }
 }
+.client-app,
+.client-app-shell,
+.client-app-main,
+.client-app-main-content,
+.client-panel,
+.client-content,
+.client-purchase-card,
+.app-codes { min-width: 0; max-width: 100%; }
+.client-topbar { min-width: 0; gap: 12px; }
+.client-brandline { min-width: 0; }
+.client-brandline h2,
+.client-brandline small { overflow-wrap: anywhere; }
+.client-purchase-card .app-codes { overflow: hidden; overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
+.client-purchase-card .app-codes b,
+.client-purchase-card .app-codes code,
+.client-purchase-card .app-codes span { display: block; max-width: 100%; overflow-wrap: anywhere; word-break: break-word; white-space: pre-wrap; }
+.client-purchase-card .app-codes img,
+.client-purchase-card .legacy-photo,
+.client-purchase-card .legacy-qr { display: block; width: min(190px, 100%); max-width: 100%; height: auto; margin: 10px auto; object-fit: contain; }
+@media (max-width: 600px) {
+  .client-app-top { min-height: 60px; padding-inline: 12px; }
+  .client-app-top-right { min-width: 0; gap: 6px; }
+  .client-app-balance { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; }
+  .client-main,
+  .client-content { padding-inline: 14px; }
+  .client-section-title { gap: 8px; flex-wrap: wrap; }
+  .client-stat-grid,
+  .client-stats { grid-template-columns: 1fr; }
+  .client-purchase-card { padding: 14px; }
+  .client-purchase-card details > summary { overflow-wrap: anywhere; }
+  .client-purchase-card .app-codes { padding: 10px; font-size: 13px; }
+  .client-purchase-card .app-codes b { font-size: 12px; line-height: 1.45; }
+  .client-nav-trigger { min-width: 44px; min-height: 44px; justify-content: center; padding: 0 11px; }
+}
