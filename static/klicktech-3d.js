@@ -22,6 +22,8 @@
       nav.classList.remove('menu-open');
       const checkbox = document.getElementById('menu-checkbox');
       if (checkbox) checkbox.checked = false;
+      const details = nav.querySelector('.menu-details');
+      if (details) details.open = false;
       toggle.setAttribute('aria-expanded', 'false');
       toggle.setAttribute('aria-label', 'Abrir menu'); toggle.innerHTML = '<span aria-hidden="true">☰</span>';
     }));

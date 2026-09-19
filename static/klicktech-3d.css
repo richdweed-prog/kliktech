@@ -654,3 +654,27 @@ html, body { max-width:100%; overflow-x:hidden; }
   .nav .menu-checkbox:focus-visible + .mobile-menu-toggle { outline:2px solid var(--acid); outline-offset:4px; }
 }
 @media (min-width:801px) { .menu-checkbox, .nav .mobile-menu-toggle { display:none !important; } }
+
+
+/* Definitive native menu: details/summary works without JavaScript or framework hydration. */
+.menu-details { display:contents; }
+.menu-details > summary { list-style:none; }
+.menu-details > summary::-webkit-details-marker { display:none; }
+@media (min-width:801px) {
+  .menu-details { display:contents; }
+  .menu-details > summary { display:none !important; }
+  .menu-details > .links { display:flex !important; position:static !important; }
+}
+@media (max-width:800px) {
+  .nav { position:sticky; isolation:isolate; }
+  .menu-details { display:block; position:static; }
+  .menu-details > summary.mobile-menu-toggle { display:grid !important; cursor:pointer; user-select:none; }
+  .menu-details > .links { display:none !important; position:absolute !important; top:calc(100% + 8px); left:10px; right:10px; z-index:30; }
+  .menu-details[open] > .links { display:flex !important; }
+  .js-menu .nav.menu-open .menu-details > .links { display:flex !important; }
+  .menu-details[open] > summary { color:var(--acid); border-color:var(--acid); }
+  .menu-details[open] > summary span { display:block; transform:rotate(45deg); }
+}
+@media (max-width:520px) {
+  .menu-details > .links { left:10px; right:10px; }
+}
