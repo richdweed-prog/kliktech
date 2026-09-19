@@ -30,7 +30,7 @@ O `.gitignore` impede o envio do `.env`, dos bancos SQLite locais, do cache Pyth
 
 No painel do Render, escolha **New → Blueprint** e conecte o repositório GitHub. O Render detectará o `render.yaml`. Confirme o serviço `kliktech-esim`, o plano Starter e o disco persistente. Depois do primeiro deploy, abra o endereço HTTPS gerado e confirme que `/healthz` responde com `{"status":"ok","service":"kliktech-esim"}`.
 
-As variáveis marcadas com `sync: false` no Blueprint devem ser preenchidas no painel do Render: `KLIKTECH_ADMIN_EMAIL`, `KLIKTECH_ADMIN_PASSWORD`, `BRAVOPAY_API_KEY` e `BRAVOPAY_WEBHOOK_SECRET`. A `KLIKTECH_SECRET_KEY` é gerada pelo Render. Não faça commit de valores reais dessas variáveis.
+As variáveis marcadas com `sync: false` no Blueprint devem ser preenchidas exclusivamente no painel do Render: `DATABASE_URL`, `KLIKTECH_ADMIN_EMAIL`, `KLIKTECH_ADMIN_PASSWORD`, `BRAVOPAY_API_KEY` e `BRAVOPAY_WEBHOOK_SECRET`. A `DATABASE_URL` contém a credencial de conexão do banco e nunca deve ser colocada no GitHub, em HTML, em JavaScript ou em mensagens de log. A `KLIKTECH_SECRET_KEY` é gerada pelo Render. Não faça commit de valores reais dessas variáveis.
 
 ## BravoPay
 
