@@ -169,7 +169,7 @@ document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { 
   revealTargets.forEach((element, index) => {
     element.dataset.reveal = '';
     if (element.classList.contains('info-card') || element.classList.contains('step-item') || element.matches('.faq details') || element.matches('.app-stat, .client-stat')) {
-      element.style.transitionDelay = `${Math.min(index % 4, 3) * 55}ms`;
+      element.dataset.revealOrder = String(Math.min(index % 4, 3));
     }
   });
   if (!reduceMotion && 'IntersectionObserver' in window) {
@@ -179,7 +179,7 @@ document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { 
     revealTargets.forEach((element) => observer.observe(element));
   } else revealTargets.forEach((element) => element.classList.add('is-visible'));
 
-  if (reduceMotion) return;
+  if (reduceMotion || window.matchMedia('(max-width: 900px)').matches) return;
   if (!reduceMotion) {
     let ticking = false;
     const updateScrollScene = () => {
