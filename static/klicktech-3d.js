@@ -22,29 +22,29 @@
     }));
   }
 
-  // Build a lightweight 3D telemetry layer around the existing eSIM artwork.
   const stage = document.querySelector('.stage');
   if (stage) {
     const extras = document.createElement('div');
-    extras.className = 'stage-3d-extras';
-    extras.setAttribute('aria-hidden', 'true');
-    extras.innerHTML = `
-      <div class="scene-grid"></div>
-      <div class="energy-ring ring-a"></div><div class="energy-ring ring-b"></div>
-      <div class="satellite satellite-a"><i></i><b>01</b></div>
-      <div class="satellite satellite-b"><i></i><b>02</b></div>
-      <div class="signal-beam"></div>
-      <div class="hud-label hud-top"><span class="hud-dot"></span>NETWORK / ONLINE</div>
-      <div class="hud-label hud-bottom">LAT 23.55° S&nbsp;&nbsp; LONG 46.63° W</div>
-      <div class="hud-metric metric-a"><small>LATÊNCIA</small><strong>18<em>ms</em></strong></div>
-      <div class="hud-metric metric-b"><small>COBERTURA</small><strong>99.8<em>%</em></strong></div>`;
+    extras.className = 'stage-3d-extras'; extras.setAttribute('aria-hidden', 'true');
+    extras.innerHTML = '<div class="scene-grid"></div><div class="energy-ring ring-a"></div><div class="energy-ring ring-b"></div><div class="satellite satellite-a"><i></i><b>01</b></div><div class="satellite satellite-b"><i></i><b>02</b></div><div class="signal-beam"></div><div class="hud-label hud-top"><span class="hud-dot"></span>NETWORK / ONLINE</div><div class="hud-label hud-bottom">LAT 23.55° S&nbsp;&nbsp; LONG 46.63° W</div><div class="hud-metric metric-a"><small>LATÊNCIA</small><strong>18<em>ms</em></strong></div><div class="hud-metric metric-b"><small>COBERTURA</small><strong>99.8<em>%</em></strong></div>';
     stage.appendChild(extras);
   }
 
-  const revealTargets = document.querySelectorAll('.plans, .compatibility-section, .info-card, .story, .step-item, .faq, .faq details');
+  // A living dashboard layer is created only once the customer area exists.
+  const appHome = document.querySelector('#app-home');
+  if (appHome) {
+    const ambient = document.createElement('div');
+    ambient.className = 'client-ambient'; ambient.setAttribute('aria-hidden', 'true');
+    ambient.innerHTML = '<div class="ambient-glow"></div><div class="ambient-orbit ambient-orbit-a"></div><div class="ambient-orbit ambient-orbit-b"></div><div class="ambient-core"><span></span></div><div class="ambient-particle p1"></div><div class="ambient-particle p2"></div><div class="ambient-particle p3"></div><div class="live-chip"><i></i> CONEXÃO ATIVA</div>';
+    appHome.prepend(ambient);
+    const hero = appHome.querySelector('.app-hero');
+    if (hero) hero.classList.add('client-hero-layer');
+  }
+
+  const revealTargets = document.querySelectorAll('.plans, .compatibility-section, .info-card, .story, .step-item, .faq, .faq details, .app-stat, .app-order, .app-buy-card, .app-note, .app-profile-card, .client-stat, .client-purchase-card');
   revealTargets.forEach((element, index) => {
     element.dataset.reveal = '';
-    if (element.classList.contains('info-card') || element.classList.contains('step-item') || element.matches('.faq details')) {
+    if (element.classList.contains('info-card') || element.classList.contains('step-item') || element.matches('.faq details') || element.matches('.app-stat, .client-stat')) {
       element.style.transitionDelay = `${Math.min(index % 4, 3) * 55}ms`;
     }
   });
@@ -56,26 +56,24 @@
   } else revealTargets.forEach((element) => element.classList.add('is-visible'));
 
   if (reduceMotion || !finePointer) return;
-
   if (stage) {
     stage.addEventListener('pointermove', (event) => {
-      const rect = stage.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width - .5;
-      const y = (event.clientY - rect.top) / rect.height - .5;
-      stage.style.setProperty('--scene-x', `${x * 18}px`);
-      stage.style.setProperty('--scene-y', `${y * 14}px`);
-      stage.style.setProperty('--scene-rotate', `${x * 4}deg`);
+      const rect = stage.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width - .5; const y = (event.clientY - rect.top) / rect.height - .5;
+      stage.style.setProperty('--scene-x', `${x * 18}px`); stage.style.setProperty('--scene-y', `${y * 14}px`); stage.style.setProperty('--scene-rotate', `${x * 4}deg`);
     });
-    stage.addEventListener('pointerleave', () => {
-      stage.style.setProperty('--scene-x', '0px'); stage.style.setProperty('--scene-y', '0px'); stage.style.setProperty('--scene-rotate', '0deg');
+    stage.addEventListener('pointerleave', () => { stage.style.setProperty('--scene-x', '0px'); stage.style.setProperty('--scene-y', '0px'); stage.style.setProperty('--scene-rotate', '0deg'); });
+  }
+  const clientArea = document.querySelector('.client-app');
+  if (clientArea) {
+    clientArea.addEventListener('pointermove', (event) => {
+      const rect = clientArea.getBoundingClientRect();
+      clientArea.style.setProperty('--client-x', `${((event.clientX - rect.left) / rect.width - .5) * 16}px`);
+      clientArea.style.setProperty('--client-y', `${((event.clientY - rect.top) / rect.height - .5) * 12}px`);
     });
   }
-
-  document.querySelectorAll('.info-card, .app-stat, .app-order, .app-buy-card, .kpi').forEach((card) => {
+  document.querySelectorAll('.info-card, .app-stat, .app-order, .app-buy-card, .app-note, .app-profile-card, .client-stat, .client-purchase-card, .kpi').forEach((card) => {
     card.addEventListener('pointermove', (event) => {
-      const rect = card.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width - .5;
-      const y = (event.clientY - rect.top) / rect.height - .5;
+      const rect = card.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width - .5; const y = (event.clientY - rect.top) / rect.height - .5;
       card.style.setProperty('--mx', `${(x + .5) * 100}%`); card.style.setProperty('--my', `${(y + .5) * 100}%`);
       card.style.transform = `perspective(900px) rotateY(${x * 4}deg) rotateX(${-y * 3}deg) translateY(-5px) translateZ(4px)`;
     });

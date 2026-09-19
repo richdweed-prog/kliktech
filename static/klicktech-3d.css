@@ -488,3 +488,50 @@ body.light-mode .nav{background:#f4f7f5ee}body.light-mode .stage .card{box-shado
 @media (max-width:800px) { .stage-3d-extras { transform: scale(.86) translate3d(var(--scene-x,0),var(--scene-y,0),-20px); }.scene-grid { width:92vw; }.ring-a { width:88vw; }.ring-b { width:70vw; }.hud-top { top:8%; }.metric-a { left:0; bottom:15%; }.metric-b { right:0; top:18%; }.satellite-a { left:5%; }.satellite-b { right:5%; } }
 @media (max-width:520px) { .stage-3d-extras { transform:scale(.7); }.hud-label { font-size:8px; }.hud-metric { padding:7px 9px; }.hud-metric strong { font-size:14px; }.hud-bottom { display:none; }.signal-beam { opacity:.2; } }
 @media (prefers-reduced-motion: reduce) { .stage-3d-extras, .scene-grid, .energy-ring, .satellite, .hud-dot { animation:none !important; transition:none !important; } }
+
+
+/* UNIVERSAL LUXURY LAYER — public, authenticated and admin experiences */
+.modal, .wallet-box, .client-shell, .client-stat, .client-purchase-card, .client-muted-box, .app-note, .app-profile-card, .app-buy-card, .app-order, .app-stat, .kpi, .card, .purchase, .box, .form, .compatibility-form { position:relative; overflow:hidden; }
+.modal::before, .wallet-box::before, .client-shell::before, .client-stat::before, .client-purchase-card::before, .client-muted-box::before, .app-note::before, .app-profile-card::before, .app-buy-card::before, .app-order::before, .app-stat::before, .kpi::before, .card::before, .purchase::before, .box::before, .form::before, .compatibility-form::before { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(340px 180px at var(--mx, 90%) var(--my, 0%), rgba(138,244,209,.14), transparent 68%); opacity:.7; mix-blend-mode:screen; }
+[data-reveal] { opacity:0; transform:translateY(18px); transition:opacity .65s var(--ease-out),transform .65s var(--ease-out); }
+[data-reveal].is-visible { opacity:1; transform:none; }
+.client-app { --client-x:0px; --client-y:0px; background:radial-gradient(900px 620px at calc(82% + var(--client-x)) calc(0% + var(--client-y)),rgba(138,120,255,.2),transparent 62%),radial-gradient(620px 460px at 20% 80%,rgba(138,244,209,.08),transparent 70%),var(--bg)!important; }
+.client-app-main { position:relative; isolation:isolate; }
+.client-app-main::after { content:""; position:fixed; inset:0; pointer-events:none; z-index:-1; background:radial-gradient(circle at 50% 30%,transparent 0 20%,rgba(138,244,209,.025) 45%,transparent 70%); }
+.client-app-top { box-shadow:0 12px 42px rgba(0,0,0,.2), inset 0 -1px rgba(138,244,209,.04); }
+.client-app-side { position:relative; overflow:hidden; }
+.client-app-side::before { content:""; position:absolute; width:240px; height:240px; left:-120px; bottom:8%; border-radius:50%; background:radial-gradient(circle,rgba(138,244,209,.12),transparent 68%); filter:blur(10px); animation:side-pulse 8s ease-in-out infinite; }
+.client-app-nav, .client-app-logo, .client-app-side small, .client-app-exit { position:relative; z-index:1; }
+.client-app-nav button.active::after { content:""; position:absolute; right:10px; width:5px; height:5px; border-radius:50%; background:var(--acid); box-shadow:0 0 12px var(--acid); }
+.client-app-main-content { position:relative; }
+#app-home { position:relative; min-height:680px; isolation:isolate; }
+.client-hero-layer, #app-home > .app-stat-grid, #app-home > .app-heading, #app-home > .app-history { position:relative; z-index:2; }
+.client-ambient { position:absolute; width:min(620px,72vw); height:min(620px,72vw); right:-8%; top:-8%; z-index:0; pointer-events:none; transform:translate3d(var(--client-x),var(--client-y),0); transition:transform .7s var(--ease-out); opacity:.9; }
+.ambient-glow { position:absolute; inset:12%; border-radius:50%; background:radial-gradient(circle at 38% 30%,rgba(255,255,255,.72),rgba(138,244,209,.22) 8%,rgba(138,120,255,.18) 38%,transparent 70%); filter:blur(15px); animation:ambient-breathe 6s ease-in-out infinite; }
+.ambient-core { position:absolute; left:50%; top:50%; width:170px; height:170px; transform:translate(-50%,-50%) translateZ(30px); border-radius:50%; background:radial-gradient(circle at 32% 24%,#fff,rgba(138,244,209,.9) 10%,rgba(138,120,255,.6) 42%,rgba(10,10,24,.9) 74%); box-shadow:0 0 55px rgba(138,244,209,.22),inset -25px -30px 45px rgba(4,5,18,.72),inset 10px 10px 25px rgba(255,255,255,.22); animation:core-float 7s ease-in-out infinite; }
+.ambient-core::before { content:""; position:absolute; inset:14%; border:1px solid rgba(255,255,255,.35); border-radius:50%; transform:rotate(-25deg) scaleX(1.7); }
+.ambient-core span { position:absolute; left:50%; top:50%; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 0 18px 5px var(--acid); transform:translate(-50%,-50%); }
+.ambient-orbit { position:absolute; left:50%; top:50%; border:1px solid rgba(138,244,209,.38); border-radius:50%; transform-style:preserve-3d; }
+.ambient-orbit-a { width:480px; height:160px; transform:translate(-50%,-50%) rotateX(68deg) rotateZ(-24deg); animation:client-orbit 15s linear infinite; }
+.ambient-orbit-b { width:360px; height:120px; transform:translate(-50%,-50%) rotateX(68deg) rotateZ(32deg); border-color:rgba(138,120,255,.42); animation:client-orbit-reverse 20s linear infinite; }
+.ambient-orbit::after { content:""; position:absolute; width:9px; height:9px; right:8%; top:12%; border-radius:50%; background:var(--acid); box-shadow:0 0 12px var(--acid),0 0 30px var(--violet); }
+.ambient-particle { position:absolute; width:5px; height:5px; border-radius:50%; background:var(--acid); box-shadow:0 0 14px var(--acid); animation:particle-drift 5s ease-in-out infinite; }.p1{left:16%;top:30%}.p2{right:14%;top:62%;animation-delay:-2s}.p3{left:65%;bottom:8%;animation-delay:-4s;background:var(--violet);box-shadow:0 0 14px var(--violet)}
+.live-chip { position:absolute; left:5%; top:18%; padding:9px 12px; border:1px solid rgba(138,244,209,.25); border-radius:999px; color:var(--acid); font:9px ui-monospace,monospace; letter-spacing:.12em; background:rgba(8,8,15,.42); backdrop-filter:blur(10px); box-shadow:0 10px 25px rgba(0,0,0,.18); }.live-chip i{display:inline-block;width:6px;height:6px;margin-right:6px;border-radius:50%;background:var(--acid);box-shadow:0 0 10px var(--acid);animation:hud-blink 1.5s infinite}
+.app-hero { min-height:220px; align-items:center !important; }
+.app-hero > div { max-width:600px; }
+.app-hero h1 { text-shadow:0 14px 40px rgba(0,0,0,.35); }
+.app-stat { backdrop-filter:blur(12px); }
+.app-stat strong { letter-spacing:-.06em; }
+.app-heading { position:relative; }
+.app-heading::after { content:""; position:absolute; left:0; bottom:-1px; width:72px; height:1px; background:linear-gradient(90deg,var(--acid),transparent); }
+.app-order details[open] { animation:details-open .35s var(--ease-out); }
+@keyframes ambient-breathe { 50%{transform:scale(1.08);opacity:.7} }
+@keyframes core-float { 50%{transform:translate(-50%,-57%) rotate(8deg)} }
+@keyframes client-orbit { to{transform:translate(-50%,-50%) rotateX(68deg) rotateZ(336deg)} }
+@keyframes client-orbit-reverse { to{transform:translate(-50%,-50%) rotateX(68deg) rotateZ(-328deg)} }
+@keyframes particle-drift { 50%{transform:translate(15px,-18px);opacity:.35} }
+@keyframes side-pulse { 50%{transform:scale(1.2);opacity:.5} }
+@keyframes details-open { from{opacity:.4;transform:translateY(-5px)}to{opacity:1;transform:none} }
+@media(max-width:900px){#app-home{min-height:0}.client-ambient{width:520px;height:520px;right:-22%;top:0;opacity:.62}.ambient-core{width:125px;height:125px}.ambient-orbit-a{width:410px}.ambient-orbit-b{width:300px}.live-chip{left:0;top:12%}.app-hero{min-height:200px!important}}
+@media(max-width:600px){.client-ambient{width:410px;height:410px;right:-31%;top:-2%;opacity:.46}.ambient-core{width:92px;height:92px}.ambient-orbit-a{width:320px;height:120px}.ambient-orbit-b{width:245px;height:90px}.live-chip{top:7%;font-size:8px;padding:7px 9px}.app-hero{min-height:210px!important}.app-hero h1{position:relative;z-index:2}.app-hero p{position:relative;z-index:2;max-width:330px}.client-app-main-content{overflow:hidden}}
+@media(prefers-reduced-motion:reduce){.client-ambient,.ambient-glow,.ambient-core,.ambient-orbit,.ambient-particle,.client-app-side::before,.live-chip i{animation:none!important;transition:none!important}}
