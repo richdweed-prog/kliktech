@@ -100,3 +100,32 @@
 .admin-totp-setup h2 { margin: 0; font-size: 1rem; }
 .admin-totp-setup img { display: block; width: 220px; height: 220px; max-width: 100%; margin: .8rem auto; background: white; border-radius: .5rem; }
 .admin-totp-setup code { display: block; overflow-wrap: anywhere; color: var(--admin-accent); font-size: .85rem; letter-spacing: .08em; }
+.admin-side-label { display: block; margin: 0 .7rem .55rem; color: var(--admin-muted); font-size: .65rem; letter-spacing: .14em; }
+.admin-topbar-account { color: var(--admin-muted); font-size: .75rem; }
+.admin-date { padding: .65rem .75rem; border: 1px solid var(--admin-border); border-radius: .55rem; color: var(--admin-text); font-size: .75rem; }
+.admin-kpi-grid--legacy { grid-template-columns: repeat(2, 1fr); }
+.admin-kpi--primary { background: linear-gradient(135deg, #153d19, #0e1d17); border-color: rgb(94 172 67 / .55); }
+.admin-kpi em { display: block; margin-top: .45rem; color: var(--admin-muted); font-size: .72rem; font-style: normal; }
+.admin-section-heading { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+.admin-section-heading h3 { margin: 0 0 .35rem; }
+.admin-legend { color: var(--admin-muted); font-size: .72rem; white-space: nowrap; }
+.admin-legend-dot { display: inline-block; width: .5rem; height: .5rem; margin-right: .35rem; border-radius: 50%; background: var(--admin-accent); box-shadow: 0 0 10px var(--admin-accent); }
+.admin-monthly-chart { min-height: 16rem; margin-top: 1rem; padding-top: 1rem; background: repeating-linear-gradient(to bottom, transparent 0 2.7rem, rgb(41 54 90 / .55) 2.75rem), linear-gradient(180deg, #111d34, #0a1220); }
+.admin-monthly-chart .admin-chart-column { min-height: 13rem; grid-template-rows: auto 1fr auto; }
+.admin-monthly-chart .admin-chart-column small { color: var(--admin-text); font-size: .62rem; opacity: 0; }
+.admin-monthly-chart .admin-chart-column:hover small { opacity: 1; }
+.admin-chart-bar { width: min(2rem, 75%); min-height: .3rem; align-self: end; border-radius: .4rem .4rem .1rem .1rem; background: linear-gradient(180deg, var(--admin-accent), #3a9a51); box-shadow: 0 0 18px rgb(141 255 36 / .25); }
+.admin-chart-bar--1 { height: 10%; }.admin-chart-bar--2 { height: 20%; }.admin-chart-bar--3 { height: 30%; }.admin-chart-bar--4 { height: 40%; }.admin-chart-bar--5 { height: 50%; }.admin-chart-bar--6 { height: 60%; }.admin-chart-bar--7 { height: 70%; }.admin-chart-bar--8 { height: 80%; }.admin-chart-bar--9 { height: 90%; }.admin-chart-bar--10 { height: 100%; }
+.admin-monthly-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; margin-top: .75rem; }
+.admin-monthly-summary > div { padding: .7rem; border: 1px solid var(--admin-border); border-radius: .5rem; background: #0b1427; }
+.admin-monthly-summary small { display: block; color: var(--admin-muted); font-size: .65rem; }.admin-monthly-summary b { display: block; margin-top: .3rem; font-size: 1rem; }
+.admin-lower-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: .8rem; }
+.admin-card-caption { font-size: .72rem; }
+.admin-alert { padding: .75rem; border: 1px solid #813d4d; border-radius: .5rem; background: #281923; color: #ff9aa0; font-size: .75rem; }.admin-alert p { margin: 0 0 .4rem; }.admin-alert p:last-child { margin-bottom: 0; }
+.admin-action-row { display: flex; flex-wrap: wrap; gap: .35rem; }
+.admin-inline-input { min-width: 5rem; padding: .4rem; }
+.admin-stock-review { margin-top: .9rem; padding: 1rem; border: 1px solid #78aaff; border-radius: .7rem; background: #0b1427; }.admin-stock-review[hidden] { display: none; }.admin-stock-review-grid { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 1rem; }.admin-stock-review-grid img { width: 100%; max-height: 280px; object-fit: contain; background: #050912; border: 1px solid var(--admin-border); border-radius: .5rem; }.admin-stock-review-grid pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: .8rem; border: 1px solid var(--admin-border); border-radius: .5rem; background: #050912; color: var(--admin-accent); font: .75rem/1.6 monospace; }
+.admin-support { display: grid; gap: .3rem; margin-top: 1.2rem; padding: 1rem; border-top: 1px solid var(--admin-border); color: var(--admin-muted); font-size: .75rem; }.admin-support b { color: var(--admin-accent); font-size: .65rem; letter-spacing: .12em; }.admin-support strong { color: var(--admin-text); }.admin-support a { color: var(--admin-accent); }
+.admin-batch-preview { min-height: 1.5rem; padding: .35rem 0; font-size: .78rem; }.admin-batch-preview.is-success { color: var(--admin-accent); }.admin-batch-preview.is-error { color: var(--admin-danger); }
+@media (min-width: 42rem) { .admin-kpi-grid--legacy { grid-template-columns: 1.4fr repeat(3, 1fr); } }
+@media (max-width: 42rem) { .admin-lower-grid { grid-template-columns: 1fr; }.admin-monthly-summary { grid-template-columns: 1fr; }.admin-section-heading { display: block; }.admin-legend { margin-top: .5rem; }.admin-stock-review-grid { grid-template-columns: 1fr; }.admin-topbar-account { display: none; } }

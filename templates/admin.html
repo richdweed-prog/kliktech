@@ -13,79 +13,50 @@
     <aside class="admin-sidebar" id="admin-sidebar" aria-label="Navegação administrativa">
       <button class="admin-sidebar-close" id="admin-sidebar-close" type="button" aria-label="Fechar menu">×</button>
       <div class="admin-logo"><span aria-hidden="true">K</span>KlikTech</div>
+      <small class="admin-side-label">GERENCIADOR</small>
       <nav class="admin-nav">
-        <button class="is-active" type="button" data-panel="admin-overview">Resumo</button>
-        <button type="button" data-panel="admin-sales">Vendas</button>
-        <button type="button" data-panel="admin-pix">Pix gerados</button>
-        <button type="button" data-panel="admin-abandoned">Carrinhos abandonados</button>
-        <button type="button" data-panel="admin-stock">Estoque</button>
-        <button type="button" data-panel="admin-users">Usuários</button>
-        <button type="button" data-panel="admin-add">Abastecer</button>
+        <button class="is-active" type="button" data-panel="admin-overview">▦ Resumo</button>
+        <button type="button" data-panel="admin-sales">▤ Vendas</button>
+        <button type="button" data-panel="admin-pix">◉ Pix gerados</button>
+        <button type="button" data-panel="admin-abandoned">◌ Abandonados</button>
+        <button type="button" data-panel="admin-stock">◈ Estoque</button>
+        <button type="button" data-panel="admin-users">♙ Usuários</button>
+        <button type="button" data-panel="admin-add">＋ Abastecer</button>
       </nav>
     </aside>
     <div class="admin-scrim" id="admin-scrim" aria-hidden="true"></div>
     <main class="admin-main">
       <header class="admin-topbar">
         <button class="admin-menu-button" id="admin-menu-button" type="button" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Abrir menu">☰</button>
-        <div><h1>Painel administrativo</h1><p>Operação e estoque da KlikTech</p></div>
+        <div><h1>Painel de controle</h1><p>Visão operacional da KlikTech</p></div>
         <span class="admin-topbar-spacer"></span>
+        <span class="admin-topbar-account">Administrador</span>
         <button class="admin-button admin-button--ghost" id="admin-logout" type="button">Sair</button>
       </header>
       <div class="admin-content">
         <section class="admin-panel is-active" id="admin-overview" aria-labelledby="admin-overview-title">
-          <div class="admin-heading"><div><p class="admin-muted">Visão operacional</p><h2 id="admin-overview-title">Resumo</h2></div><span class="admin-muted" id="admin-updated"></span></div>
-          <div class="admin-kpi-grid">
-            <article class="admin-kpi"><small>Receita de vendas</small><strong class="accent" id="metric-sales-value">R$ 0,00</strong></article>
-            <article class="admin-kpi"><small>Pedidos concluídos</small><strong id="metric-sales-count">0</strong></article>
-            <article class="admin-kpi"><small>Pix pendentes</small><strong id="metric-pix-count">0</strong></article>
-            <article class="admin-kpi"><small>Estoque disponível</small><strong id="metric-stock">0</strong></article>
+          <div class="admin-heading"><div><p class="admin-muted">Visão dos últimos 12 meses</p><h2 id="admin-overview-title">Resumo financeiro</h2><p class="admin-muted">Acompanhe vendas, receita e recargas pagas em uma única leitura.</p></div><span class="admin-date" id="admin-updated">Atualizado agora</span></div>
+          <div class="admin-kpi-grid admin-kpi-grid--legacy">
+            <article class="admin-kpi admin-kpi--primary"><small>Receita acumulada</small><strong class="accent" id="metric-sales-value">R$ 0,00</strong><em>Valor total dos pedidos aprovados</em></article>
+            <article class="admin-kpi"><small>Pedidos concluídos</small><strong id="metric-sales-count">0</strong><em class="accent">Compras entregues</em></article>
+            <article class="admin-kpi"><small>Pix aguardando pagamento</small><strong id="metric-pix-count">0</strong><em id="metric-pix-value">R$ 0,00 em aberto</em></article>
+            <article class="admin-kpi"><small>Estoque disponível</small><strong id="metric-stock">0</strong><em>eSIMs prontos para venda</em></article>
           </div>
-          <div class="admin-card"><h3>Vendas nos últimos 12 meses</h3><div class="admin-chart" id="admin-chart" role="img" aria-label="Gráfico de vendas por mês"></div></div>
-          <div class="admin-card"><h3>Pedidos recentes</h3><div id="admin-recent"></div></div>
+          <div class="admin-card admin-monthly-card"><div class="admin-section-heading"><div><h3>Desempenho mensal</h3><p class="admin-muted">Receita de vendas por mês e evolução do período.</p></div><div class="admin-legend"><span class="admin-legend-dot"></span> Receita</div></div><div class="admin-chart admin-monthly-chart" id="admin-chart" role="img" aria-label="Gráfico de receita e vendas dos últimos 12 meses"></div><div class="admin-monthly-summary" id="admin-monthly-summary"></div></div>
+          <div class="admin-lower-grid"><div class="admin-card"><h3>Últimos pedidos</h3><p class="admin-muted admin-card-caption">As compras mais recentes, com valor e status de entrega.</p><div id="admin-recent"></div></div><div class="admin-card"><h3>Atenção operacional</h3><p class="admin-muted admin-card-caption">Indicadores que pedem acompanhamento agora.</p><div class="admin-alert" id="admin-alerts">Carregando indicadores...</div><p class="admin-muted admin-card-caption">E-mails aparecem mascarados. Códigos de ativação nunca são exibidos nesta visão.</p></div></div>
         </section>
         <section class="admin-panel" id="admin-sales" aria-labelledby="admin-sales-title"><div class="admin-heading"><div><p class="admin-muted">Operação</p><h2 id="admin-sales-title">Vendas</h2></div></div><div class="admin-card" id="admin-sales-table"></div></section>
-        <section class="admin-panel" id="admin-pix" aria-labelledby="admin-pix-title"><div class="admin-heading"><div><p class="admin-muted">Financeiro</p><h2 id="admin-pix-title">Pix gerados</h2></div></div><div class="admin-card" id="admin-pix-table"></div></section>
-        <section class="admin-panel" id="admin-abandoned" aria-labelledby="admin-abandoned-title"><div class="admin-heading"><div><p class="admin-muted">Funil</p><h2 id="admin-abandoned-title">Abandonados</h2></div></div><div class="admin-card" id="admin-abandoned-table"></div></section>
-        <section class="admin-panel" id="admin-stock" aria-labelledby="admin-stock-title"><div class="admin-heading"><div><p class="admin-muted">Produtos</p><h2 id="admin-stock-title">Estoque</h2></div></div><div class="admin-card" id="admin-stock-table"></div></section>
-        <section class="admin-panel" id="admin-users" aria-labelledby="admin-users-title"><div class="admin-heading"><div><p class="admin-muted">Base de clientes</p><h2 id="admin-users-title">Usuários</h2></div></div><div class="admin-card" id="admin-users-table"></div></section>
+        <section class="admin-panel" id="admin-pix" aria-labelledby="admin-pix-title"><div class="admin-heading"><div><p class="admin-muted">Financeiro</p><h2 id="admin-pix-title">Pix gerados</h2></div></div><div class="admin-card"><p class="admin-muted">Controle cobranças pendentes, pagas, expiradas e com falha.</p><div id="admin-pix-table"></div></div></section>
+        <section class="admin-panel" id="admin-abandoned" aria-labelledby="admin-abandoned-title"><div class="admin-heading"><div><p class="admin-muted">Funil</p><h2 id="admin-abandoned-title">Carrinhos abandonados</h2></div></div><div class="admin-card"><p class="admin-muted">Sessões sem checkout concluído há mais de 30 minutos.</p><div id="admin-abandoned-table"></div></div></section>
+        <section class="admin-panel" id="admin-stock" aria-labelledby="admin-stock-title"><div class="admin-heading"><div><p class="admin-muted">Produtos disponíveis</p><h2 id="admin-stock-title">Estoque</h2></div></div><div class="admin-card" id="admin-stock-table"></div><div class="admin-stock-review" id="admin-stock-review" hidden><button class="admin-button admin-button--ghost" id="admin-stock-review-close" type="button">Fechar</button><h3>Conferência segura do eSIM</h3><p class="admin-muted">Dados protegidos, visíveis somente nesta área administrativa.</p><div id="admin-stock-review-content"></div></div></section>
+        <section class="admin-panel" id="admin-users" aria-labelledby="admin-users-title"><div class="admin-heading"><div><p class="admin-muted">Base de clientes</p><h2 id="admin-users-title">Usuários cadastrados</h2></div></div><div class="admin-card" id="admin-users-table"></div></section>
         <section class="admin-panel" id="admin-add" aria-labelledby="admin-add-title">
-          <div class="admin-heading"><div><p class="admin-muted">Entrada controlada</p><h2 id="admin-add-title">Abastecer estoque</h2></div></div>
-          <div class="admin-card">
-            <h3>Criar slot de venda</h3>
-            <form class="admin-form" id="plan-form">
-              <label for="plan-gigas">Franquia</label><input class="admin-input" id="plan-gigas" name="gigas" placeholder="Ex.: 100GB" required>
-              <label for="plan-tempo">Ciclo</label><input class="admin-input" id="plan-tempo" name="tempo" placeholder="Ex.: 1 mês" required>
-              <label for="plan-price">Preço em reais</label><input class="admin-input" id="plan-price" name="price" type="number" min="0.01" step="0.01" required>
-              <label class="admin-checkbox-row"><input name="featured" type="checkbox"> Destacar como recomendado</label>
-              <button class="admin-button" type="submit">Criar slot</button>
-            </form>
-            <p class="admin-form-message" id="plan-message" role="status"></p>
-            <div id="admin-plans-table"></div>
-          </div>
-          <div class="admin-card">
-            <h3>Adicionar eSIM</h3>
-            <form class="admin-form" id="inventory-form" enctype="multipart/form-data">
-              <label for="inventory-plan">Plano</label><select class="admin-input" id="inventory-plan" name="plan" required></select>
-              <label for="inventory-ddd">DDD</label><input class="admin-input" id="inventory-ddd" name="ddd" inputmode="numeric" pattern="[0-9]{2,3}" required>
-              <label for="inventory-model">Modelo</label><input class="admin-input" id="inventory-model" name="model" autocomplete="off">
-              <label for="inventory-line">Linha ou ICCID (opcional)</label><input class="admin-input" id="inventory-line" name="line" autocomplete="off">
-              <label for="inventory-smdp">Endereço SM-DP+</label><input class="admin-input" id="inventory-smdp" name="smdp" autocomplete="off" required>
-              <label for="inventory-code">Código de ativação</label><input class="admin-input" id="inventory-code" name="activation_code" autocomplete="off" required>
-              <label for="inventory-photo">Foto (JPG, PNG ou WebP)</label><input class="admin-input" id="inventory-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp">
-              <button class="admin-button" type="submit">Adicionar ao estoque</button>
-            </form>
-            <p class="admin-form-message" id="inventory-message" role="status"></p>
-          </div>
-          <div class="admin-card">
-            <h3>Importar lote JSON</h3>
-            <form class="admin-form" id="batch-form" enctype="multipart/form-data">
-              <label for="batch-records">Registros JSON</label><textarea class="admin-input" id="batch-records" name="records" rows="8" placeholder="[{&quot;plan&quot;:&quot;30GB · 1 mês&quot;,&quot;ddd&quot;:&quot;31&quot;,&quot;smdp&quot;:&quot;...&quot;,&quot;activation_code&quot;:&quot;...&quot;}]" required></textarea>
-              <label for="batch-photos">Fotos na mesma ordem (opcional)</label><input class="admin-input" id="batch-photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-              <button class="admin-button" type="submit">Importar lote</button>
-            </form>
-            <p class="admin-form-message" id="batch-message" role="status"></p>
-          </div>
+          <div class="admin-heading"><div><p class="admin-muted">Entrada segura</p><h2 id="admin-add-title">Abastecer estoque</h2></div></div>
+          <div class="admin-card"><h3>Slots de venda</h3><p class="admin-muted">Crie formatos como 100GB · 1 mês sem alterar o código.</p><form class="admin-form" id="plan-form"><label for="plan-gigas">Franquia</label><input class="admin-input" id="plan-gigas" name="gigas" placeholder="Ex.: 100GB" required><label for="plan-tempo">Ciclo</label><input class="admin-input" id="plan-tempo" name="tempo" placeholder="Ex.: 1 mês" required><label for="plan-price">Preço em reais</label><input class="admin-input" id="plan-price" name="price" type="number" min="0.01" step="0.01" required><label class="admin-checkbox-row"><input name="featured" type="checkbox"> Destacar como recomendado</label><button class="admin-button" type="submit">Adicionar slot de venda</button></form><p class="admin-form-message" id="plan-message" role="status"></p><div id="admin-plans-table"></div></div>
+          <div class="admin-card"><h3>Adicionar eSIM</h3><form class="admin-form" id="inventory-form" enctype="multipart/form-data"><label for="inventory-plan">Plano</label><select class="admin-input" id="inventory-plan" name="plan" required></select><label for="inventory-ddd">DDD</label><input class="admin-input" id="inventory-ddd" name="ddd" inputmode="numeric" pattern="[0-9]{2,3}" required><label for="inventory-model">Modelo</label><input class="admin-input" id="inventory-model" name="model" autocomplete="off"><label for="inventory-line">Linha ou ICCID (opcional)</label><input class="admin-input" id="inventory-line" name="line" autocomplete="off"><label for="inventory-smdp">Endereço SM-DP+</label><input class="admin-input" id="inventory-smdp" name="smdp" autocomplete="off" required><label for="inventory-code">Código de ativação</label><input class="admin-input" id="inventory-code" name="activation_code" autocomplete="off" required><label for="inventory-photo">Foto (JPG, PNG ou WebP)</label><input class="admin-input" id="inventory-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp"><button class="admin-button" type="submit">Adicionar material ao estoque</button></form><p class="admin-form-message" id="inventory-message" role="status"></p></div>
+          <div class="admin-card"><h3>Importação em lote</h3><p class="admin-muted">Cole o JSON e associe fotos na mesma ordem dos registros.</p><form class="admin-form" id="batch-form" enctype="multipart/form-data"><label for="batch-records">Registros JSON</label><textarea class="admin-input" id="batch-records" name="records" rows="8" placeholder="[{&quot;plan&quot;:&quot;30GB · 1 mês&quot;,&quot;ddd&quot;:&quot;31&quot;,&quot;smdp&quot;:&quot;...&quot;,&quot;activation_code&quot;:&quot;...&quot;}]" required></textarea><label for="batch-photos">Fotos na mesma ordem (opcional)</label><input class="admin-input" id="batch-photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple><button class="admin-button admin-button--ghost" id="batch-preview-button" type="button">Validar JSON e pré-visualizar</button><div class="admin-batch-preview" id="batch-preview" aria-live="polite"></div><button class="admin-button" type="submit">Confirmar e adicionar lote</button></form><p class="admin-form-message" id="batch-message" role="status"></p></div>
         </section>
+        <aside class="admin-support"><b>SUPORTE OFICIAL</b><strong>Atendimento KlikTech</strong><span>WhatsApp <a href="https://wa.me/5533984518052" target="_blank" rel="noopener">(33) 98451-8052</a></span><span>E-mail <a href="mailto:digital@kliktech.com.br">digital@kliktech.com.br</a></span></aside>
       </div>
     </main>
   </div>
