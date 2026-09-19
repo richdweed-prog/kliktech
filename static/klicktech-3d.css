@@ -616,3 +616,29 @@ html, body { max-width:100%; overflow-x:hidden; }
   .app-stat:first-child { grid-column:auto; }
   .client-app-main-content { padding-inline:12px !important; }
 }
+
+
+/* Progressive navigation: content exists even if a browser, Telegram or a privacy mode blocks JS. */
+@media (max-width:800px) {
+  .nav { position:sticky; }
+  .nav .links { display:flex !important; position:static; flex-direction:row; flex-wrap:wrap; align-items:center; padding:0; border:0; box-shadow:none; background:transparent; backdrop-filter:none; }
+  .nav .links a, .nav .links .public-theme-toggle { display:flex !important; min-height:40px; }
+  .nav .links .pill { width:auto; }
+  .mobile-menu-toggle { display:none !important; }
+  .js-menu .nav .mobile-menu-toggle { display:inline-grid !important; }
+  .js-menu .nav .links { display:none !important; position:absolute; }
+  .js-menu .nav.menu-open .links { display:flex !important; }
+}
+@media (max-width:520px) {
+  .nav .links { gap:6px !important; }
+  .nav .links a, .nav .links .public-theme-toggle { flex:1 1 calc(50% - 6px); justify-content:center; text-align:center; }
+  .nav .links .pill { flex-basis:100%; }
+  .js-menu .nav .links { left:10px; right:10px; }
+}
+
+/* Scroll-driven depth: the scene changes as the visitor explores the page. */
+.stage-3d-extras { transform:translate3d(var(--scene-x,0),calc(var(--scene-y,0) + var(--scroll-depth,0px)),var(--scroll-depth,0px)) rotateZ(calc(var(--scene-rotate,0deg) + var(--scroll-tilt,0deg))); }
+.stage > .card { transform:rotateX(calc(56deg + var(--scroll-tilt,0deg))) rotateZ(-28deg) rotateY(-18deg) translateZ(var(--scroll-depth,0px)); }
+.client-app { background-position:calc(50% + var(--client-scroll,0px)) 0; }
+.client-ambient { transform:translate3d(calc(var(--client-x,0px) + var(--client-scroll,0px)),var(--client-y,0),0); }
+@media (prefers-reduced-motion:reduce) { .stage-3d-extras, .stage > .card, .client-ambient { transform:none !important; } }

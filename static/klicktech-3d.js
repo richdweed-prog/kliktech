@@ -1,15 +1,17 @@
 (() => {
+  document.documentElement.classList.add('js-menu');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const finePointer = window.matchMedia('(pointer: fine)').matches;
 
   const nav = document.querySelector('.nav');
   const links = document.querySelector('.links');
   if (nav && links) {
-    const toggle = document.createElement('button');
+    const existingToggle = nav.querySelector('.mobile-menu-toggle');
+    const toggle = existingToggle || document.createElement('button');
     toggle.className = 'mobile-menu-toggle'; toggle.type = 'button';
     toggle.setAttribute('aria-label', 'Abrir menu'); toggle.setAttribute('aria-expanded', 'false');
     toggle.innerHTML = '<span aria-hidden="true">☰</span>';
-    nav.insertBefore(toggle, links);
+    if (!existingToggle) nav.insertBefore(toggle, links);
     toggle.addEventListener('click', () => {
       const open = nav.classList.toggle('menu-open');
       toggle.setAttribute('aria-expanded', String(open));
@@ -56,6 +58,25 @@
   } else revealTargets.forEach((element) => element.classList.add('is-visible'));
 
   if (reduceMotion || !finePointer) return;
+  if (!reduceMotion) {
+    let ticking = false;
+    const updateScrollScene = () => {
+      const y = window.scrollY || 0;
+      const viewport = Math.max(window.innerHeight, 1);
+      const progress = Math.min(1, Math.max(0, y / (document.documentElement.scrollHeight - viewport || 1)));
+      document.documentElement.style.setProperty('--page-progress', progress.toFixed(3));
+      if (stage) {
+        stage.style.setProperty('--scroll-tilt', `${(progress * 16 - 8).toFixed(2)}deg`);
+        stage.style.setProperty('--scroll-depth', `${(progress * 18).toFixed(2)}px`);
+      }
+      const clientApp = document.querySelector('.client-app');
+      if (clientApp) clientApp.style.setProperty('--client-scroll', `${(progress * 22).toFixed(2)}px`);
+      ticking = false;
+    };
+    window.addEventListener('scroll', () => { if (!ticking) { window.requestAnimationFrame(updateScrollScene); ticking = true; } }, { passive: true });
+    updateScrollScene();
+  }
+
   if (stage) {
     stage.addEventListener('pointermove', (event) => {
       const rect = stage.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width - .5; const y = (event.clientY - rect.top) / rect.height - .5;

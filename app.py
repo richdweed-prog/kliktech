@@ -74,6 +74,12 @@ def security_headers(response):
     response.headers.setdefault('X-Content-Type-Options','nosniff')
     response.headers.setdefault('Referrer-Policy','strict-origin-when-cross-origin')
     response.headers.setdefault('X-Frame-Options','DENY')
+    response.headers.setdefault('Permissions-Policy','camera=(), microphone=(), geolocation=()')
+    response.headers.setdefault('Cross-Origin-Opener-Policy','same-origin')
+    response.headers.setdefault('Cross-Origin-Resource-Policy','same-origin')
+    response.headers.setdefault('Content-Security-Policy',"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.bravopay.com.br https://*.bravopay.com.br")
+    if request.is_secure or request.headers.get('X-Forwarded-Proto') == 'https':
+        response.headers.setdefault('Strict-Transport-Security','max-age=31536000; includeSubDomains')
     if request.path.startswith('/api/account/') or request.path.startswith('/api/admin/'):
         response.headers['Cache-Control']='private, no-store'
     return response
