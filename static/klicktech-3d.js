@@ -3,31 +3,43 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const finePointer = window.matchMedia('(pointer: fine)').matches;
 
-  const nav = document.querySelector('.nav');
-  const links = document.querySelector('.links');
+  const nav = document.querySelector('.kt-public-nav');
+  const links = document.querySelector('.kt-public-links');
   if (nav && links) {
-    const existingToggle = nav.querySelector('.mobile-menu-toggle');
-    const toggle = existingToggle || document.createElement('button');
-    toggle.className = 'mobile-menu-toggle'; toggle.type = 'button';
-    toggle.setAttribute('aria-label', 'Abrir menu'); toggle.setAttribute('aria-expanded', 'false');
-    toggle.innerHTML = '<span aria-hidden="true">☰</span>';
-    if (!existingToggle) nav.insertBefore(toggle, links);
-    toggle.addEventListener('click', () => {
-      const open = nav.classList.toggle('menu-open');
-      toggle.setAttribute('aria-expanded', String(open));
-      toggle.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
-      toggle.innerHTML = `<span aria-hidden="true">${open ? '×' : '☰'}</span>`;
-    });
+    const details = nav.querySelector('.menu-details');
+    const toggle = details?.querySelector('summary');
+    if (toggle) {
+      details.addEventListener('toggle', () => {
+        toggle.setAttribute('aria-expanded', String(details.open));
+        toggle.setAttribute('aria-label', details.open ? 'Fechar menu' : 'Abrir menu');
+      });
+    }
     links.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
       nav.classList.remove('menu-open');
       const checkbox = document.getElementById('menu-checkbox');
       if (checkbox) checkbox.checked = false;
-      const details = nav.querySelector('.menu-details');
-      if (details) details.open = false;
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-label', 'Abrir menu'); toggle.innerHTML = '<span aria-hidden="true">☰</span>';
+      const menuDetails = nav.querySelector('.menu-details');
+      if (menuDetails) menuDetails.open = false;
+      if (toggle) { toggle.setAttribute('aria-expanded', 'false'); toggle.setAttribute('aria-label', 'Abrir menu'); }
     }));
   }
+
+  window.toggleClientNavigation = () => {
+    const app = document.querySelector('.client-app');
+    const open = !app?.classList.contains('client-nav-open');
+    app?.classList.toggle('client-nav-open', open);
+    const trigger = document.querySelector('.client-nav-trigger');
+    trigger?.setAttribute('aria-expanded', String(open));
+    document.body.classList.toggle('client-nav-lock', open);
+  };
+  window.closeClientNavigation = () => {
+    const app = document.querySelector('.client-app');
+    app?.classList.remove('client-nav-open');
+    document.querySelector('.client-nav-trigger')?.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('client-nav-lock');
+  };
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { window.closeClientNavigation?.(); } });
+  document.querySelectorAll('.client-app-nav button').forEach((button) => button.addEventListener('click', () => window.closeClientNavigation?.()));
 
   const stage = document.querySelector('.stage');
   if (stage) {
@@ -62,7 +74,7 @@
     revealTargets.forEach((element) => observer.observe(element));
   } else revealTargets.forEach((element) => element.classList.add('is-visible'));
 
-  if (reduceMotion || !finePointer) return;
+  if (reduceMotion) return;
   if (!reduceMotion) {
     let ticking = false;
     const updateScrollScene = () => {
@@ -82,6 +94,7 @@
     updateScrollScene();
   }
 
+  if (!finePointer) return;
   if (stage) {
     stage.addEventListener('pointermove', (event) => {
       const rect = stage.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width - .5; const y = (event.clientY - rect.top) / rect.height - .5;

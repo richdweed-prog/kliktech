@@ -130,6 +130,10 @@ def load():
     # Defesa central: nenhuma rota administrativa da API pode ser chamada sem sessão de administrador.
     if request.path.startswith('/api/admin/') and not (g.user and g.user['is_admin']):
         return jsonify(error='Área administrativa protegida.'),403
+    if g.user and request.method in ('POST','PUT','PATCH','DELETE') and request.endpoint != 'bravopay_webhook':
+        origin = (request.headers.get('Origin') or '').rstrip('/')
+        if origin and origin != request.host_url.rstrip('/'):
+            return jsonify(error='Origem da requisição não autorizada.'), 403
     if g.user:
         try:
             ip=request.headers.get('X-Forwarded-For',request.remote_addr or 'unknown').split(',')[0].strip()[:128]
