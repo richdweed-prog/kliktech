@@ -25,6 +25,14 @@
         <input class="admin-input" id="admin-2fa-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
         <button class="admin-button" type="submit">Validar 2FA</button>
       </form>
+      <button class="admin-button admin-button--ghost" id="admin-setup-button" type="button" hidden>Configurar autenticador</button>
+      <section class="admin-totp-setup" id="admin-totp-setup" hidden aria-labelledby="admin-totp-title">
+        <h2 id="admin-totp-title">Configurar autenticador</h2>
+        <p class="admin-help">Escaneie este QR no Aegis, 2FAS ou Google Authenticator. A imagem é gerada localmente e não usa API.</p>
+        <img id="admin-totp-qr" alt="QR Code local para configurar o autenticador" width="220" height="220">
+        <p class="admin-help">Se preferir, use a chave manual:</p>
+        <code id="admin-totp-key"></code>
+      </section>
       <p class="admin-form-message" id="admin-login-message" role="alert"></p>
       <p class="admin-help">O painel exige senha e código TOTP. Se o 2FA não estiver configurado no servidor, o acesso é bloqueado.</p>
     </section>

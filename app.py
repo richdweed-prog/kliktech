@@ -11,6 +11,7 @@ import secrets
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import quote
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
@@ -684,6 +685,31 @@ def admin_2fa():
     session.pop("admin_2fa_pending", None)
     session["admin_2fa_ok"] = True
     return jsonify(ok=True)
+
+
+@app.get("/api/auth/admin-2fa/setup")
+def admin_2fa_setup():
+    """Return a local TOTP provisioning QR for the authenticated admin setup step."""
+    if not g.user or not g.user.get("is_admin"):
+        return _json_error("Área administrativa protegida.", 403)
+    if not configured_admin_2fa():
+        return _json_error("KLIKTECH_ADMIN_TOTP_SECRET ainda não foi configurado.", 503)
+    account = str(g.user.get("email") or "admin").strip()
+    label = f"{ADMIN_TOTP_ISSUER}:{account}"
+    uri = (
+        f"otpauth://totp/{quote(label, safe=':@')}"
+        f"?secret={quote(ADMIN_TOTP_SECRET)}&issuer={quote(ADMIN_TOTP_ISSUER)}"
+    )
+    image = qrcode.make(uri)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return jsonify(
+        issuer=ADMIN_TOTP_ISSUER,
+        account=account,
+        manual_key=ADMIN_TOTP_SECRET,
+        otpauth_uri=uri,
+        qr_data_url="data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii"),
+    )
 
 
 @app.post("/api/auth/logout")

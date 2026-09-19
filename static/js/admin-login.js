@@ -42,8 +42,24 @@
     if (me.data.csrf_token) csrf = me.data.csrf_token;
     $("#admin-login-form").hidden = true;
     $("#admin-2fa-form").hidden = false;
+    $("#admin-setup-button").hidden = false;
     $("#admin-2fa-code").focus();
     message("Senha validada. Informe o código de seis dígitos do autenticador.");
+  }
+
+  async function showTotpSetup() {
+    const button = $("#admin-setup-button");
+    button.disabled = true;
+    const result = await request("/api/auth/admin-2fa/setup");
+    button.disabled = false;
+    if (!result.response || !result.response.ok) {
+      message(result.data.error || "Não foi possível carregar a configuração local.", "error");
+      return;
+    }
+    $("#admin-totp-qr").src = result.data.qr_data_url;
+    $("#admin-totp-key").textContent = result.data.manual_key;
+    $("#admin-totp-setup").hidden = false;
+    message("Escaneie o QR, aguarde o código aparecer no aplicativo e valide-o abaixo.", "success");
   }
 
   async function submitTwoFactor(event) {
@@ -60,9 +76,10 @@
       message(result.data.error || "Código 2FA inválido.", "error");
       return;
     }
-    window.location.href = "/admin/dashboard";
+    window.location.href = "/ademiroputo/dashboard";
   }
 
   $("#admin-login-form")?.addEventListener("submit", submitLogin);
   $("#admin-2fa-form")?.addEventListener("submit", submitTwoFactor);
+  $("#admin-setup-button")?.addEventListener("click", showTotpSetup);
 })();

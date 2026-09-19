@@ -96,3 +96,7 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms; transition-duration: .01ms; }
 }
+.admin-totp-setup { margin-top: 1rem; padding: 1rem; border: 1px solid var(--admin-border); border-radius: .75rem; background: rgb(255 255 255 / .03); text-align: center; }
+.admin-totp-setup h2 { margin: 0; font-size: 1rem; }
+.admin-totp-setup img { display: block; width: 220px; height: 220px; max-width: 100%; margin: .8rem auto; background: white; border-radius: .5rem; }
+.admin-totp-setup code { display: block; overflow-wrap: anywhere; color: var(--admin-accent); font-size: .85rem; letter-spacing: .08em; }
