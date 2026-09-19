@@ -1,9 +1,9 @@
 # Verificação visual
 
-As capturas finais foram geradas em Chromium headless contra a origem HTTPS pública temporária do sandbox.
+As capturas finais foram geradas em Chromium headless contra a origem HTTPS pública temporária do sandbox após a restauração da camada visual antiga.
 
-A captura mobile em 390×844 px mostra a marca KlikTech, menu hambúrguer, título, ações primárias e cartão eSIM sem overflow horizontal aparente. O conteúdo mantém contraste forte e os controles permanecem acessíveis à largura de toque.
+A captura mobile em 390×844 px mostra o cabeçalho escuro com marca KlikTech, menu compacto, cartão eSIM orbital em gradiente ciano/violeta, tipografia grande, botões neon e ausência de overflow horizontal aparente.
 
-A captura desktop em 1440×1000 px mostra navegação horizontal, composição de duas colunas no hero, cartão eSIM alinhado à direita e início da seção de planos com espaçamento consistente. A página não carrega o shell administrativo nem o CSS 3D legado.
+A captura desktop em 1440×1000 px mostra a navegação horizontal, hero em duas colunas, cartão eSIM 3D inclinado com brilho, paleta escura neon, CTA gradiente e hierarquia tipográfica correspondente ao design anterior. O markup continua sem CSS/JS inline e a navegação continua usando os handlers seguros do JavaScript atual.
 
 Arquivos: `qa/home-mobile.png` e `qa/home-desktop.png`.
