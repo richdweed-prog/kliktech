@@ -737,3 +737,54 @@ html, body { max-width:100%; overflow-x:hidden; }
   .app-stat-grid { grid-template-columns:1fr !important; }
   .app-stat:first-child { grid-column:auto; }
 }
+
+
+/* VERIFIED MOBILE MENU OVERRIDE — ID specificity prevents legacy rules from hiding the panel. */
+@media (max-width:900px) {
+  .kt-public-nav #site-menu { display:none !important; position:absolute !important; top:calc(100% + 8px) !important; left:12px !important; right:12px !important; }
+  .kt-public-nav .menu-details[open] #site-menu { display:flex !important; visibility:visible !important; opacity:1 !important; z-index:999 !important; }
+  .kt-public-nav .menu-details[open] #site-menu > * { visibility:visible !important; opacity:1 !important; }
+  .kt-public-nav .menu-details > summary.mobile-menu-toggle { position:relative; z-index:1000; }
+}
+
+/* AUTHENTICATED COMMAND CENTER — matrix floor, orbital depth and a living background. */
+.client-app { background:
+  radial-gradient(ellipse 70% 46% at 78% 18%, rgba(116,247,208,.12), transparent 68%),
+  radial-gradient(ellipse 55% 42% at 18% 82%, rgba(138,120,255,.13), transparent 70%),
+  #070a12; }
+.client-app::before { content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.34; background-image:linear-gradient(rgba(116,247,208,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(116,247,208,.11) 1px,transparent 1px); background-size:42px 42px; mask-image:radial-gradient(ellipse at 68% 36%,#000 0%,transparent 72%); transform:perspective(900px) rotateX(56deg) translateY(25%); transform-origin:center bottom; }
+.client-app::after { content:""; position:fixed; width:min(56vw,720px); height:min(56vw,720px); right:-14vw; top:8vh; pointer-events:none; z-index:0; border:1px solid rgba(116,247,208,.18); border-radius:50%; box-shadow:0 0 0 34px rgba(138,120,255,.06),0 0 0 68px rgba(116,247,208,.04),inset 0 0 80px rgba(116,247,208,.08); transform:rotateX(64deg) rotateZ(-20deg); animation:dashboard-orbit 18s linear infinite; }
+.client-app-shell, .client-app-top, .client-app-main-content, .client-app-side { position:relative; z-index:1; }
+.client-app-main::before { content:"KLIКTECH // SECURE NETWORK"; position:fixed; right:5%; bottom:7%; color:rgba(116,247,208,.22); font:9px/1 ui-monospace,SFMono-Regular,monospace; letter-spacing:.22em; pointer-events:none; transform:rotate(-90deg); transform-origin:right bottom; }
+.client-depth-scene { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0; opacity:.58; }
+.client-depth-scene .depth-ring { position:absolute; right:6%; top:18%; width:330px; height:130px; border:1px solid rgba(116,247,208,.3); border-radius:50%; transform:rotateX(68deg) rotateZ(-18deg); box-shadow:0 0 34px rgba(116,247,208,.1),inset 0 0 25px rgba(138,120,255,.08); animation:dashboard-ring 12s linear infinite; }
+.client-depth-scene .depth-ring:nth-child(2) { width:250px; height:100px; right:11%; top:25%; border-color:rgba(138,120,255,.34); animation-duration:16s; animation-direction:reverse; }
+.client-depth-scene .depth-node { position:absolute; width:8px; height:8px; right:21%; top:23%; border-radius:50%; background:var(--acid); box-shadow:0 0 14px var(--acid),0 0 45px rgba(138,120,255,.8); animation:dashboard-node 3.2s ease-in-out infinite; }
+@keyframes dashboard-orbit { to { transform:rotateX(64deg) rotateZ(340deg); } }
+@keyframes dashboard-ring { to { transform:rotateX(68deg) rotateZ(342deg); } }
+@keyframes dashboard-node { 50% { transform:translate3d(-38px,24px,20px) scale(1.35); opacity:.55; } }
+@media (max-width:600px) { .client-app::before { background-size:28px 28px; opacity:.2; transform:perspective(700px) rotateX(58deg) translateY(30%); } .client-app::after { width:380px; height:150px; right:-34%; top:22%; opacity:.5; } .client-app-main::before { right:2%; bottom:10%; font-size:7px; } .client-depth-scene .depth-ring { right:-20%; top:15%; transform:rotateX(68deg) rotateZ(-18deg) scale(.8); } }
+@media (prefers-reduced-motion:reduce) { .client-app::after,.client-depth-scene .depth-ring,.client-depth-scene .depth-node { animation:none !important; } }
+
+
+/* HARD FALLBACK: when details is open, the panel is forced into the visual layer. */
+.kt-public-nav .menu-details[open] #site-menu { display:flex !important; visibility:visible !important; opacity:1 !important; position:fixed !important; top:76px !important; left:12px !important; right:12px !important; width:auto !important; flex-direction:column !important; align-items:stretch !important; gap:6px !important; padding:12px !important; background:#0d1020 !important; border:1px solid rgba(116,247,208,.6) !important; border-radius:18px !important; box-shadow:0 26px 70px rgba(0,0,0,.62),0 0 34px rgba(116,247,208,.12) !important; z-index:2147483000 !important; }
+.kt-public-nav .menu-details[open] #site-menu > a, .kt-public-nav .menu-details[open] #site-menu > button { display:flex !important; visibility:visible !important; opacity:1 !important; min-height:48px !important; width:100% !important; align-items:center !important; padding:0 15px !important; color:#edf4f7 !important; background:rgba(255,255,255,.055) !important; border-radius:12px !important; }
+.kt-public-nav .menu-details[open] #site-menu > .pill { justify-content:center !important; color:#07110f !important; background:var(--acid) !important; }
+@media (max-width:600px) { .kt-public-nav .menu-details[open] #site-menu { top:68px !important; left:10px !important; right:10px !important; } }
+
+
+/* FINAL PUBLIC MENU — real button + sibling panel, no details/checkbox/browser quirk. */
+.sr-only { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
+@media (max-width:900px) {
+  .kt-public-nav { position:sticky; }
+  .kt-public-nav #public-menu-toggle { display:grid !important; place-items:center; width:44px; height:44px; margin-left:auto; border:1px solid var(--line); border-radius:12px; color:var(--ink); background:rgba(255,255,255,.06); font-size:20px; cursor:pointer; position:relative; z-index:1001; }
+  .kt-public-nav #site-menu { display:flex !important; position:fixed !important; top:76px !important; left:12px !important; right:12px !important; width:auto !important; flex-direction:column !important; align-items:stretch !important; gap:6px !important; padding:12px !important; background:#0d1020 !important; border:1px solid rgba(116,247,208,.6) !important; border-radius:18px !important; box-shadow:0 26px 70px rgba(0,0,0,.62) !important; visibility:visible !important; opacity:1 !important; z-index:1000 !important; }
+  .js-menu .kt-public-nav #site-menu { display:none !important; }
+  .js-menu .kt-public-nav.kt-menu-open #site-menu { display:flex !important; }
+  .kt-public-nav #site-menu > a, .kt-public-nav #site-menu > button { display:flex !important; align-items:center; min-height:48px; width:100%; padding:0 15px; border-radius:12px; color:var(--ink); background:rgba(255,255,255,.055); }
+  .kt-public-nav #site-menu > .pill { justify-content:center; color:#07110f; background:var(--acid); }
+  .js-menu .kt-public-nav.kt-menu-open #public-menu-toggle { color:var(--acid); border-color:var(--acid); }
+}
+@media (max-width:600px) { .kt-public-nav #site-menu { top:68px !important; left:10px !important; right:10px !important; } }
+@media (min-width:901px) { .kt-public-nav #public-menu-toggle { display:none !important; } }

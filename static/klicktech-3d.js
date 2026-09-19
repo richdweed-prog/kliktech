@@ -5,41 +5,22 @@
 
   const nav = document.querySelector('.kt-public-nav');
   const links = document.querySelector('.kt-public-links');
-  if (nav && links) {
-    const details = nav.querySelector('.menu-details');
-    const toggle = details?.querySelector('summary');
-    if (toggle) {
-      details.addEventListener('toggle', () => {
-        toggle.setAttribute('aria-expanded', String(details.open));
-        toggle.setAttribute('aria-label', details.open ? 'Fechar menu' : 'Abrir menu');
-      });
-    }
+  const publicToggle = document.querySelector('#public-menu-toggle');
+  window.togglePublicMenu = () => {
+    const open = !nav?.classList.contains('kt-menu-open');
+    nav?.classList.toggle('kt-menu-open', open);
+    publicToggle?.setAttribute('aria-expanded', String(open));
+    publicToggle?.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    if (publicToggle) publicToggle.querySelector('span[aria-hidden="true"]').textContent = open ? '×' : '☰';
+  };
+  if (nav && links && publicToggle) {
     links.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
-      nav.classList.remove('menu-open');
-      const checkbox = document.getElementById('menu-checkbox');
-      if (checkbox) checkbox.checked = false;
-      const menuDetails = nav.querySelector('.menu-details');
-      if (menuDetails) menuDetails.open = false;
-      if (toggle) { toggle.setAttribute('aria-expanded', 'false'); toggle.setAttribute('aria-label', 'Abrir menu'); }
+      nav.classList.remove('kt-menu-open');
+      publicToggle.setAttribute('aria-expanded', 'false');
+      publicToggle.setAttribute('aria-label', 'Abrir menu');
+      publicToggle.querySelector('span[aria-hidden="true"]').textContent = '☰';
     }));
   }
-
-  window.toggleClientNavigation = () => {
-    const app = document.querySelector('.client-app');
-    const open = !app?.classList.contains('client-nav-open');
-    app?.classList.toggle('client-nav-open', open);
-    const trigger = document.querySelector('.client-nav-trigger');
-    trigger?.setAttribute('aria-expanded', String(open));
-    document.body.classList.toggle('client-nav-lock', open);
-  };
-  window.closeClientNavigation = () => {
-    const app = document.querySelector('.client-app');
-    app?.classList.remove('client-nav-open');
-    document.querySelector('.client-nav-trigger')?.setAttribute('aria-expanded', 'false');
-    document.body.classList.remove('client-nav-lock');
-  };
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { window.closeClientNavigation?.(); } });
-  document.querySelectorAll('.client-app-nav button').forEach((button) => button.addEventListener('click', () => window.closeClientNavigation?.()));
 
   const stage = document.querySelector('.stage');
   if (stage) {
@@ -56,6 +37,10 @@
     ambient.className = 'client-ambient'; ambient.setAttribute('aria-hidden', 'true');
     ambient.innerHTML = '<div class="ambient-glow"></div><div class="ambient-orbit ambient-orbit-a"></div><div class="ambient-orbit ambient-orbit-b"></div><div class="ambient-core"><span></span></div><div class="ambient-particle p1"></div><div class="ambient-particle p2"></div><div class="ambient-particle p3"></div><div class="live-chip"><i></i> CONEXÃO ATIVA</div>';
     appHome.prepend(ambient);
+    const depth = document.createElement('div');
+    depth.className = 'client-depth-scene'; depth.setAttribute('aria-hidden', 'true');
+    depth.innerHTML = '<span class="depth-ring"></span><span class="depth-ring"></span><span class="depth-node"></span>';
+    appHome.prepend(depth);
     const hero = appHome.querySelector('.app-hero');
     if (hero) hero.classList.add('client-hero-layer');
   }
