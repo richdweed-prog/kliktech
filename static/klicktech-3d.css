@@ -788,3 +788,12 @@ html, body { max-width:100%; overflow-x:hidden; }
 }
 @media (max-width:600px) { .kt-public-nav #site-menu { top:68px !important; left:10px !important; right:10px !important; } }
 @media (min-width:901px) { .kt-public-nav #public-menu-toggle { display:none !important; } }
+
+
+/* TOUCH-SAFE FALLBACK: mobile/WebView keeps the panel open while the menu button has focus. */
+@media (max-width:900px) {
+  .kt-public-nav #public-menu-toggle:focus + #site-menu,
+  .kt-public-nav #public-menu-toggle:focus-visible + #site-menu,
+  .kt-public-nav #public-menu-toggle:active + #site-menu { display:flex !important; visibility:visible !important; opacity:1 !important; position:fixed !important; top:68px !important; left:10px !important; right:10px !important; width:auto !important; flex-direction:column !important; gap:6px !important; padding:12px !important; background:#0d1020 !important; border:1px solid rgba(116,247,208,.75) !important; border-radius:18px !important; box-shadow:0 26px 70px rgba(0,0,0,.62) !important; z-index:2147483000 !important; }
+  .kt-public-nav #public-menu-toggle:focus + #site-menu > *, .kt-public-nav #public-menu-toggle:active + #site-menu > * { display:flex !important; visibility:visible !important; opacity:1 !important; min-height:48px !important; align-items:center !important; width:100% !important; color:#edf4f7 !important; background:rgba(255,255,255,.055) !important; border-radius:12px !important; }
+}
