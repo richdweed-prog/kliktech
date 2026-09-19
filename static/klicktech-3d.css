@@ -554,3 +554,65 @@ body.light-mode .nav{background:#f4f7f5ee}body.light-mode .stage .card{box-shado
 .admin-support { display:grid; gap:7px; margin:18px 0 0; padding:18px; border:1px solid rgba(138,244,209,.23); border-radius:16px; background:linear-gradient(135deg,rgba(138,244,209,.09),rgba(138,120,255,.08)); color:var(--muted); font-size:11px; }
 .admin-support b { color:var(--acid); font:700 9px ui-monospace,monospace; letter-spacing:.16em; }.admin-support strong { color:var(--ink); font:600 18px "Space Grotesk",sans-serif; letter-spacing:-.04em; }.admin-support span { display:block; }
 @media(max-width:600px){.support-card{padding:19px}.support-card h4{font-size:24px}.support-actions{display:grid}.support-actions a{min-width:0}.footer-contact{display:block}.admin-support{margin-top:14px}}
+
+
+/* FINAL MOBILE CLIENT SYSTEM — no zoom, no sideways dragging */
+html, body { max-width:100%; overflow-x:hidden; }
+.client-app, .client-app-shell, .client-app-main, .client-app-main-content, .app-panel, .app-history, .app-order, .app-buy-grid { min-width:0; max-width:100%; }
+.client-app img, .app-codes img, .app-order img { max-width:100%; }
+@media (max-width:600px) {
+  .client-app { width:100%; overflow-x:hidden; }
+  .client-app-shell { display:block !important; width:100%; }
+  .client-app-main { width:100%; overflow:hidden; }
+  .client-app-top { display:grid !important; grid-template-columns:1fr; gap:10px; width:100%; padding:12px 14px !important; }
+  .client-app-top > div:first-child { min-width:0; }
+  .client-app-top h2 { font-size:16px !important; }
+  .client-app-top-right { display:grid !important; grid-template-columns:minmax(0,1fr) auto auto; width:100%; max-width:none !important; gap:7px !important; justify-content:stretch !important; }
+  .client-app-balance { min-width:0; text-align:left; overflow:hidden; }
+  .client-app-balance small { white-space:nowrap; font-size:8px !important; }
+  .client-app-balance strong { font-size:15px !important; }
+  .wallet-btn { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .client-app-avatar { align-self:center; }
+  .client-app-side { top:0 !important; width:100%; padding:10px 12px !important; }
+  .client-app-nav { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px !important; width:100%; overflow:visible !important; }
+  .client-app-nav button { width:100%; min-width:0; min-height:42px !important; padding:9px 8px !important; font-size:10px !important; text-align:center !important; white-space:normal !important; line-height:1.2; }
+  .client-app-nav button.active::after { right:7px; top:7px; }
+  .client-app-exit { position:static !important; width:100%; margin-top:8px !important; padding:8px !important; text-align:center !important; border-top:1px solid var(--line) !important; }
+  .client-app-main-content { width:100%; padding:24px 14px 80px !important; overflow:hidden; }
+  .app-hero { display:flex !important; flex-direction:column; align-items:flex-start !important; min-height:0 !important; margin-bottom:22px !important; }
+  .client-hero-layer { width:100%; }
+  .app-hero h1 { max-width:100%; font-size:clamp(42px,14vw,60px) !important; line-height:.9 !important; word-break:normal; }
+  .app-hero p { max-width:100% !important; }
+  .app-hero .app-cta { width:100%; text-align:center; }
+  .client-ambient { width:360px; height:360px; right:-46%; top:-42px; opacity:.32; }
+  .ambient-core { width:78px; height:78px; }
+  .ambient-orbit-a { width:290px; height:105px; }
+  .ambient-orbit-b { width:220px; height:78px; }
+  .live-chip { left:auto; right:0; top:2px; font-size:7px; }
+  .app-stat-grid { display:grid !important; grid-template-columns:1fr 1fr !important; gap:8px !important; }
+  .app-stat { min-width:0; padding:14px !important; }
+  .app-stat:first-child { grid-column:1 / -1; }
+  .app-stat strong { font-size:24px !important; }
+  .app-heading { gap:10px; flex-wrap:wrap; }
+  .app-heading h3 { min-width:0; font-size:15px; }
+  .app-heading span { margin-left:auto; font-size:10px; }
+  .app-order { width:100%; padding:14px !important; }
+  .app-order-head { display:block; min-width:0; }
+  .app-order-head b, .app-approved { overflow-wrap:anywhere; }
+  .app-order-meta { display:grid !important; grid-template-columns:1fr 1fr; gap:10px !important; }
+  .app-codes { width:100%; max-width:100%; overflow:hidden !important; word-break:break-word; white-space:normal; }
+  .app-codes img { display:block; width:min(190px,100%) !important; height:auto !important; }
+  .app-guide-grid { grid-template-columns:1fr !important; }
+  .app-buy-grid { grid-template-columns:1fr !important; width:100%; }
+  .app-buy-card { width:100%; min-width:0; }
+  .app-settings { width:100%; max-width:none; }
+  .app-settings input, .app-settings textarea, .app-settings select { max-width:100%; }
+  .support-actions a { width:100%; }
+}
+@media (max-width:360px) {
+  .client-app-top-right { grid-template-columns:1fr auto; }
+  .client-app-avatar { display:none; }
+  .app-stat-grid { grid-template-columns:1fr !important; }
+  .app-stat:first-child { grid-column:auto; }
+  .client-app-main-content { padding-inline:12px !important; }
+}
