@@ -1,11 +1,11 @@
 # Verificação visual
 
-As capturas finais foram geradas em Chromium headless contra a origem HTTPS pública temporária do sandbox, após restaurar o `templates/index.html` e a camada visual do commit original.
+As capturas finais foram geradas em Chromium headless contra a origem HTTPS pública temporária do sandbox após restaurar o markup, CSS e JavaScript visual originais.
 
-A captura mobile em 390×844 px mostra o cabeçalho compacto, marca KlicTech Sem Fronteiras, menu hambúrguer, esfera orbital com cartão eSIM 3D, hero original, CTA de compatibilidade e ausência de overflow horizontal aparente.
+A captura mobile em 390×844 px mostra o cabeçalho original, menu compacto, esfera orbital, cartão eSIM inclinado, grade de cena, anéis de energia, satélites, HUD de rede/latência/cobertura e partículas, além do hero original sem overflow horizontal.
 
-A captura desktop em 1440×1000 px mostra a navegação horizontal original, hero em duas colunas, composição orbital completa, tipografia grande, gradientes neon, ações originais e espaçamento do design anterior.
+A captura desktop em 1440×1000 px mostra a navegação original, composição orbital completa, grade, anéis, satélites numerados, indicadores de latência/cobertura, sinal conectado, coordenadas, cartão 3D, tipografia e ações originais.
 
-Os estilos foram externalizados para `static/css/legacy-inline.css` e `static/css/legacy-3d.css`; os handlers foram substituídos por `data-legacy-action` e JavaScript externo com CSRF/try-catch.
+Os estilos estão em `static/css/legacy-inline.css` e `static/css/legacy-3d.css`; o comportamento visual está em `static/js/legacy-public.js`. A camada foi externalizada e não usa handlers inline.
 
 Arquivos: `qa/home-mobile.png` e `qa/home-desktop.png`.
