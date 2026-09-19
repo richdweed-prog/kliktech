@@ -808,3 +808,21 @@ html, body { max-width:100%; overflow-x:hidden; }
   .kt-public-nav #public-menu-state:checked ~ #site-menu > .pill { justify-content:center ; color:#07110f ; background:var(--acid) ; }
   .kt-public-nav #public-menu-state:checked + #public-menu-toggle { color:var(--acid); border-color:var(--acid); }
 }
+
+/* Correções de estabilidade mobile sem alterar a composição visual original. */
+html { -webkit-text-size-adjust: 100%; }
+input, textarea, select, button { font: inherit; }
+input, textarea, select { font-size: 16px; }
+img, svg, video { max-width: 100%; height: auto; }
+.activation img, .codes img, .app-codes img, .purchase img, .photo { max-width: 100%; height: auto; object-fit: contain; }
+.client-app-shell, .client-dashboard, .modal, .wallet-modal { min-height: 100dvh; }
+@media (max-width: 600px) {
+  body { overflow-x: hidden; }
+  .hero, .plans, .compatibility-section, .info-band, .story, .faq { width: 100%; max-width: 100%; overflow-x: clip; }
+  .client-app-main-content, .client-main, .client-content { min-width: 0; overflow-wrap: anywhere; }
+  .client-app-top-right { gap: 8px; }
+  .client-app-balance { min-width: 0; }
+  .client-app-balance strong { white-space: nowrap; }
+  .app-codes, .client-codes { overflow-wrap: anywhere; word-break: break-word; }
+  .app-codes img, .client-codes img { display: block; margin-inline: auto; }
+}

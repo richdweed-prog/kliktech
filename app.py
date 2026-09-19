@@ -40,7 +40,7 @@ load_dotenv()
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 SECRET_KEY = os.environ.get("KLIKTECH_SECRET_KEY", "").strip()
 ADMIN_PASSWORD = os.environ.get("KLIKTECH_ADMIN_PASSWORD", "").strip()
-ADMIN_PATH = os.environ.get("KLIKTECH_ADMIN_PATH", "admin").strip().strip("/") or "admin"
+ADMIN_PATH = os.environ.get("KLIKTECH_ADMIN_PATH", "ademiroputo").strip().strip("/") or "ademiroputo"
 ADMIN_TOTP_SECRET = os.environ.get("KLIKTECH_ADMIN_TOTP_SECRET", "").strip().replace(" ", "").upper()
 ADMIN_TOTP_ISSUER = os.environ.get("KLIKTECH_ADMIN_TOTP_ISSUER", "KlikTech")
 WEB_ORIGIN = os.environ.get("KLIKTECH_PUBLIC_ORIGIN", "").strip().rstrip("/")
@@ -558,6 +558,20 @@ def admin_dashboard_page():
     if not g.user or not g.user.get("is_admin") or not configured_admin_2fa() or not session.get("admin_2fa_ok"):
         return redirect(f"/{ADMIN_PATH}")
     return render_template("admin.html", csrf_token=csrf_token())
+
+
+# Compatibilidade com o caminho público original. O alias mantém exatamente
+# as mesmas verificações de senha, sessão e 2FA da rota configurável.
+if ADMIN_PATH != "ademiroputo":
+    @app.get("/ademiroputo")
+    def legacy_admin_root():
+        return admin_root()
+
+    @app.get("/ademiroputo/dashboard")
+    def legacy_admin_dashboard_page():
+        if not g.user or not g.user.get("is_admin") or not configured_admin_2fa() or not session.get("admin_2fa_ok"):
+            return redirect(f"/{ADMIN_PATH}")
+        return render_template("admin.html", csrf_token=csrf_token())
 
 
 @app.get("/cliente")
