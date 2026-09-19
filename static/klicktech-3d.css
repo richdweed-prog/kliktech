@@ -369,3 +369,122 @@ body.light-mode .nav{background:#f4f7f5ee}body.light-mode .stage .card{box-shado
 @media(max-width:500px){.nav{padding:0 16px!important}.brand{font-size:15px!important}.brand-logo{width:25px!important}.links{gap:5px!important}.pill{padding:10px 9px!important;font-size:9px!important}.public-theme-toggle{padding:9px 7px!important;font-size:9px!important}.hero{padding-left:16px!important;padding-right:16px!important}.hero h1{font-size:clamp(53px,16vw,76px)!important}.stage{transform:scale(.68)!important;margin:-78px 0 -100px!important}.compatibility-section{margin-left:16px;margin-right:16px}}
 
 .catalog-loading{grid-template-columns:1fr!important}.catalog-placeholder{min-height:112px;display:flex;align-items:center;padding:22px;background:linear-gradient(135deg,rgba(24,24,42,.72),rgba(14,14,27,.72));border:1px dashed var(--line);border-radius:16px;color:var(--muted);font-size:13px}.catalog-placeholder::before{content:"";width:9px;height:9px;margin-right:10px;border-radius:50%;background:var(--acid);box-shadow:0 0 16px var(--acid);animation:catalog-pulse 1.1s ease-in-out infinite}@keyframes catalog-pulse{50%{opacity:.35;transform:scale(.72)}}
+
+
+/* KLIC KTECH PREMIUM RESPONSIVE PASS — mobile-first refinements */
+:root {
+  --content-max: 1440px;
+  --ease-out: cubic-bezier(.23,1,.32,1);
+  --section-pad: clamp(64px, 10vw, 132px);
+}
+
+.nav { min-height: 78px; }
+.hero, .plans, .story, .faq, .compatibility-section { width: 100%; }
+.hero h1, .plans h2, .story h2, .faq h2, .compatibility-section h2 { text-wrap: balance; }
+.hero p, .story-copy, .compatibility-copy p { text-wrap: pretty; }
+
+/* More deliberate section rhythm and scroll reveal hooks. */
+.info-card, .step-item, .faq details, .compatibility-form, .plans .plan { will-change: transform; }
+[data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity .7s var(--ease-out), transform .7s var(--ease-out); }
+[data-reveal].is-visible { opacity: 1; transform: none; }
+
+/* Avoid hover transforms fighting pointer tilt. */
+@media (pointer: fine) {
+  .plan, .info-card, .faq details, .compatibility-form { transform-style: preserve-3d; }
+}
+
+.mobile-menu-toggle { display: none; }
+
+@media (max-width: 800px) {
+  .nav { padding-inline: 18px !important; gap: 12px; }
+  .brand { flex: 0 0 auto; font-size: 16px !important; }
+  .brand-logo { width: 27px !important; height: 27px !important; }
+  .mobile-menu-toggle { display: inline-grid; place-items: center; width: 40px; height: 40px; margin-left: auto; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: rgba(255,255,255,.04); font-size: 20px; }
+  .links { position: absolute; top: calc(100% + 8px); left: 14px; right: 14px; display: none; flex-direction: column; align-items: stretch; gap: 4px !important; padding: 10px; background: rgba(13,13,26,.96); border: 1px solid var(--line-strong); border-radius: 18px; box-shadow: 0 22px 55px rgba(0,0,0,.45); backdrop-filter: blur(24px); }
+  .nav.menu-open .links { display: flex; }
+  .links a { display: flex !important; align-items: center; min-height: 44px; padding: 0 13px; border-radius: 10px; }
+  .links a:hover { background: rgba(138,244,209,.08); }
+  .links .public-theme-toggle { width: 100%; min-height: 44px; text-align: left; }
+  .links .pill { justify-content: center; margin-top: 4px; }
+  .hero { min-height: auto !important; padding-top: 48px !important; padding-bottom: 72px !important; gap: 18px !important; }
+  .hero > div:first-child { animation: none; }
+  .hero h1 { font-size: clamp(55px, 14vw, 90px) !important; margin-top: 20px !important; }
+  .hero p { font-size: 14px; max-width: 520px !important; }
+  .actions { flex-wrap: wrap; gap: 10px !important; }
+  .actions .cta, .actions .compat-cta { flex: 1 1 190px; justify-content: center; text-align: center; }
+  .actions .ghost { flex: 1 1 140px; text-align: center; }
+  .stage { order: -1; min-height: clamp(290px, 72vw, 430px) !important; height: auto !important; transform: none !important; margin: -4px 0 0 !important; }
+  .stage::before { width: 88vw; height: 88vw; max-width: 430px; max-height: 430px; }
+  .stage::after { right: 0; top: 9%; font-size: 9px; }
+  .stage > .card { width: min(340px, 78vw) !important; height: min(216px, 49vw) !important; }
+  .orb { width: min(390px, 82vw) !important; height: min(390px, 82vw) !important; }
+  .orbit { width: min(535px, 100vw) !important; height: min(170px, 38vw) !important; }
+  .plans, .story, .faq, .compatibility-section { padding-inline: 20px !important; }
+  .plans { padding-top: 72px !important; padding-bottom: 76px !important; }
+  .plans h2, .story h2, .faq h2, .compatibility-section h2 { font-size: clamp(44px, 12vw, 70px) !important; }
+  .plans .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .plans .plan { min-height: 276px !important; padding: 20px !important; }
+  .plan.featured { transform: none !important; }
+  .info-band { padding-inline: 20px !important; }
+  .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .info-card { min-height: 190px; padding: 19px !important; }
+  .story { padding-top: 78px !important; padding-bottom: 78px !important; gap: 34px !important; }
+  .faq { padding-top: 74px !important; padding-bottom: 84px !important; }
+  .compatibility-section { margin-inline: 0 !important; }
+  .foot { padding-inline: 20px !important; }
+}
+
+@media (max-width: 520px) {
+  .nav { min-height: 68px; }
+  .brand { max-width: calc(100% - 56px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hero { padding-inline: 20px !important; }
+  .hero h1 { font-size: clamp(52px, 16vw, 76px) !important; }
+  .stage { min-height: 270px !important; margin-top: -16px !important; }
+  .stage > .card { width: 275px !important; height: 175px !important; }
+  .stage > .card .chip { left: 20px; top: 28px; width: 52px; height: 42px; }
+  .stage > .card strong { left: 20px; bottom: 20px; font-size: 16px; }
+  .stage > .card small { right: 17px; bottom: 20px; font-size: 8px; }
+  .stage > .card .tag { top: 16px; right: 10px; padding: 6px 8px; font-size: 8px; }
+  .plans .grid, .info-grid { grid-template-columns: 1fr !important; }
+  .plans .plan { min-height: 238px !important; }
+  .info-card { min-height: auto; }
+  .compatibility-input-row { gap: 8px; }
+  .compatibility-section { padding-block: 64px !important; }
+  .foot { font-size: 10px; line-height: 1.8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  [data-reveal] { opacity: 1; transform: none; }
+}
+
+
+/* Immersive orbital scene — pure CSS 3D, GPU friendly and mobile-safe */
+.stage-3d-extras { position: absolute; inset: 0; pointer-events: none; transform: translate3d(var(--scene-x,0),var(--scene-y,0),-20px) rotateZ(var(--scene-rotate,0deg)); transition: transform .6s var(--ease-out); transform-style: preserve-3d; }
+.scene-grid { position: absolute; width: 520px; height: 290px; left: 50%; top: 55%; transform: translate(-50%,-50%) rotateX(64deg) translateZ(-120px); background-image: linear-gradient(rgba(138,244,209,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(138,244,209,.16) 1px, transparent 1px); background-size: 34px 34px; mask-image: radial-gradient(ellipse, black 8%, transparent 68%); opacity: .45; animation: grid-drift 12s linear infinite; }
+.energy-ring { position: absolute; left: 50%; top: 50%; border: 1px solid rgba(138,244,209,.35); border-radius: 50%; transform-style: preserve-3d; box-shadow: 0 0 24px rgba(138,244,209,.14), inset 0 0 20px rgba(138,120,255,.1); }
+.ring-a { width: 430px; height: 180px; transform: translate(-50%,-50%) rotateX(68deg) rotateZ(-18deg); animation: ring-spin 14s linear infinite; }
+.ring-b { width: 345px; height: 140px; transform: translate(-50%,-50%) rotateX(68deg) rotateZ(36deg); border-color: rgba(138,120,255,.42); animation: ring-spin-reverse 18s linear infinite; }
+.satellite { position: absolute; width: 28px; height: 28px; border: 1px solid var(--acid); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--acid) 18%, var(--violet) 52%, #131326 70%); box-shadow: 0 0 15px var(--acid), 0 0 36px rgba(138,120,255,.58); animation: satellite-float 5s ease-in-out infinite; }
+.satellite::before, .satellite::after { content:""; position:absolute; width:42px; height:1px; background: linear-gradient(90deg, transparent, var(--acid), transparent); left:50%; top:50%; transform:translate(-50%,-50%) rotate(45deg); }
+.satellite::after { transform:translate(-50%,-50%) rotate(-45deg); }
+.satellite i { position:absolute; inset:7px; border:1px solid rgba(255,255,255,.8); border-radius:50%; }
+.satellite b { position:absolute; top:-17px; left:50%; transform:translateX(-50%); font:8px ui-monospace,monospace; color:var(--acid); letter-spacing:.1em; }
+.satellite-a { left: 16%; top: 27%; animation-delay: -1s; }
+.satellite-b { right: 14%; bottom: 22%; animation-delay: -3s; transform: scale(.7); }
+.signal-beam { position:absolute; left:50%; top:8%; width:1px; height:84%; background:linear-gradient(180deg, transparent, rgba(138,244,209,.8), transparent); opacity:.3; transform:rotate(27deg); filter:blur(.3px); }
+.hud-label, .hud-metric { position:absolute; z-index:4; font:9px ui-monospace,SFMono-Regular,monospace; letter-spacing:.12em; color:rgba(240,240,248,.68); }
+.hud-top { top: 13%; left: 3%; }.hud-bottom { right: 1%; bottom: 10%; transform:rotate(-90deg); transform-origin:right bottom; opacity:.56; }
+.hud-dot { display:inline-block; width:6px; height:6px; margin-right:6px; border-radius:50%; background:var(--acid); box-shadow:0 0 12px var(--acid); animation: hud-blink 1.8s ease-in-out infinite; }
+.hud-metric { padding:10px 12px; border-left:1px solid rgba(138,244,209,.45); background:linear-gradient(90deg,rgba(8,8,15,.42),transparent); backdrop-filter:blur(5px); }
+.hud-metric small { display:block; color:var(--muted); font-size:8px; margin-bottom:4px; }.hud-metric strong { color:var(--ink); font:600 17px "Space Grotesk",sans-serif; letter-spacing:-.04em; }.hud-metric em { color:var(--acid); font:9px ui-monospace,monospace; font-style:normal; margin-left:3px; }
+.metric-a { left: 2%; bottom: 19%; }.metric-b { right: 1%; top: 24%; }
+@keyframes grid-drift { to { background-position: 34px 34px; } }
+@keyframes ring-spin { to { transform: translate(-50%,-50%) rotateX(68deg) rotateZ(342deg); } }
+@keyframes ring-spin-reverse { to { transform: translate(-50%,-50%) rotateX(68deg) rotateZ(-324deg); } }
+@keyframes satellite-float { 50% { margin-top:-10px; margin-left:7px; } }
+@keyframes hud-blink { 50% { opacity:.35; } }
+@media (max-width:800px) { .stage-3d-extras { transform: scale(.86) translate3d(var(--scene-x,0),var(--scene-y,0),-20px); }.scene-grid { width:92vw; }.ring-a { width:88vw; }.ring-b { width:70vw; }.hud-top { top:8%; }.metric-a { left:0; bottom:15%; }.metric-b { right:0; top:18%; }.satellite-a { left:5%; }.satellite-b { right:5%; } }
+@media (max-width:520px) { .stage-3d-extras { transform:scale(.7); }.hud-label { font-size:8px; }.hud-metric { padding:7px 9px; }.hud-metric strong { font-size:14px; }.hud-bottom { display:none; }.signal-beam { opacity:.2; } }
+@media (prefers-reduced-motion: reduce) { .stage-3d-extras, .scene-grid, .energy-ring, .satellite, .hud-dot { animation:none !important; transition:none !important; } }
