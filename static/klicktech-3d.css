@@ -642,3 +642,15 @@ html, body { max-width:100%; overflow-x:hidden; }
 .client-app { background-position:calc(50% + var(--client-scroll,0px)) 0; }
 .client-ambient { transform:translate3d(calc(var(--client-x,0px) + var(--client-scroll,0px)),var(--client-y,0),0); }
 @media (prefers-reduced-motion:reduce) { .stage-3d-extras, .stage > .card, .client-ambient { transform:none !important; } }
+
+
+/* Native menu switch: survives blocked scripts and embedded browsers. */
+.menu-checkbox { position:absolute; opacity:0; pointer-events:none; width:1px; height:1px; }
+@media (max-width:800px) {
+  .nav .mobile-menu-toggle { display:inline-grid !important; cursor:pointer; }
+  .js-menu .nav .mobile-menu-toggle { display:inline-grid !important; }
+  .nav .links { display:none !important; position:absolute; top:calc(100% + 8px); left:10px; right:10px; z-index:20; }
+  .nav .menu-checkbox:checked ~ .links, .js-menu .nav.menu-open .links { display:flex !important; }
+  .nav .menu-checkbox:focus-visible + .mobile-menu-toggle { outline:2px solid var(--acid); outline-offset:4px; }
+}
+@media (min-width:801px) { .menu-checkbox, .nav .mobile-menu-toggle { display:none !important; } }

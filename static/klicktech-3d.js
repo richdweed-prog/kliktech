@@ -19,7 +19,10 @@
       toggle.innerHTML = `<span aria-hidden="true">${open ? '×' : '☰'}</span>`;
     });
     links.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
-      nav.classList.remove('menu-open'); toggle.setAttribute('aria-expanded', 'false');
+      nav.classList.remove('menu-open');
+      const checkbox = document.getElementById('menu-checkbox');
+      if (checkbox) checkbox.checked = false;
+      toggle.setAttribute('aria-expanded', 'false');
       toggle.setAttribute('aria-label', 'Abrir menu'); toggle.innerHTML = '<span aria-hidden="true">☰</span>';
     }));
   }
