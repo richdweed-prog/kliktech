@@ -127,39 +127,31 @@ document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { 
   const nav = document.querySelector('.kt-public-nav');
   const links = document.querySelector('.kt-public-links');
   const publicToggle = document.querySelector('#public-menu-toggle');
-  window.togglePublicMenu = () => {
-    const open = !nav?.classList.contains('kt-menu-open');
-    nav?.classList.toggle('kt-menu-open', open);
-    publicToggle?.setAttribute('aria-expanded', String(open));
-    publicToggle?.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
-    if (publicToggle) publicToggle.querySelector('span[aria-hidden="true"]').textContent = open ? '×' : '☰';
+  const setPublicMenu = (open, moveFocus = false) => {
+    if (!nav || !links || !publicToggle) return;
+    nav.classList.toggle('kt-menu-open', open);
+    nav.dataset.menuOpen = String(open);
+    links.hidden = !open;
+    publicToggle.setAttribute('aria-expanded', String(open));
+    publicToggle.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    publicToggle.querySelector('span[aria-hidden="true"]').textContent = open ? '×' : '☰';
     document.body.classList.toggle('public-menu-lock', open && window.matchMedia('(max-width: 900px)').matches);
-    if (open) links?.querySelector('a, button')?.focus();
+    if (moveFocus) links.querySelector('a, button')?.focus();
   };
+  window.togglePublicMenu = () => setPublicMenu(!nav?.classList.contains('kt-menu-open'), true);
   if (nav && links && publicToggle) {
+    setPublicMenu(false);
     links.querySelectorAll('a, button').forEach((link) => link.addEventListener('click', () => {
-      nav.classList.remove('kt-menu-open');
-      publicToggle.setAttribute('aria-expanded', 'false');
-      publicToggle.setAttribute('aria-label', 'Abrir menu');
-      publicToggle.querySelector('span[aria-hidden="true"]').textContent = '☰';
-      document.body.classList.remove('public-menu-lock');
+      setPublicMenu(false);
     }));
     document.addEventListener('click', (event) => {
       if (!nav.contains(event.target) && nav.classList.contains('kt-menu-open')) {
-        nav.classList.remove('kt-menu-open');
-        publicToggle.setAttribute('aria-expanded', 'false');
-        publicToggle.setAttribute('aria-label', 'Abrir menu');
-        publicToggle.querySelector('span[aria-hidden="true"]').textContent = '☰';
-        document.body.classList.remove('public-menu-lock');
+        setPublicMenu(false);
       }
     });
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && nav.classList.contains('kt-menu-open')) {
-        nav.classList.remove('kt-menu-open');
-        publicToggle.setAttribute('aria-expanded', 'false');
-        publicToggle.setAttribute('aria-label', 'Abrir menu');
-        publicToggle.querySelector('span[aria-hidden="true"]').textContent = '☰';
-        document.body.classList.remove('public-menu-lock');
+        setPublicMenu(false);
         publicToggle.focus();
       }
     });
