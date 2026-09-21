@@ -591,7 +591,7 @@ html, body { max-width:100%; overflow-x:hidden; }
   .live-chip { left:auto; right:0; top:2px; font-size:7px; }
   .app-stat-grid { display:grid ; grid-template-columns:1fr 1fr ; gap:8px ; }
   .app-stat { min-width:0; padding:14px ; }
-  .app-stat:first-child { grid-column:1 / -1; }
+  .app-stat:first-child { grid-column:auto; }
   .app-stat strong { font-size:24px ; }
   .app-heading { gap:10px; flex-wrap:wrap; }
   .app-heading h3 { min-width:0; font-size:15px; }
@@ -674,7 +674,7 @@ html, body { max-width:100%; overflow-x:hidden; }
   .app-hero { display:flex ; flex-direction:column; align-items:stretch ; gap:16px; }
   .app-hero h1 { font-size:clamp(42px,14vw,64px) ; }
   .app-cta { align-self:stretch; text-align:center; }
-  .app-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)) ; gap:8px ; }
+  .app-stat-grid { grid-template-columns:1fr ; gap:8px ; }
   .app-stat { min-width:0; padding:14px ; }
   .app-stat:first-child { grid-column:1 / -1; }
   .app-stat strong { overflow-wrap:anywhere; }
@@ -731,6 +731,11 @@ html, body { max-width:100%; overflow-x:hidden; }
 
 /* FINAL MOBILE MENU: one real button, one JS state, no checkbox/focus conflicts. */
 .public-menu-lock { overflow:hidden; }
+body.client-mode > .kt-public-nav,
+body.client-mode > main,
+body.client-mode > .foot { display:none !important; }
+body.client-mode { overflow:hidden; }
+body.client-mode > .client-app { z-index:2147483001; }
 @media (max-width:900px) {
   .kt-public-nav #public-menu-toggle { cursor:pointer; }
   .js-menu .kt-public-nav #site-menu[hidden] { display:none !important; }
