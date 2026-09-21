@@ -644,46 +644,8 @@ html, body { max-width:100%; overflow-x:hidden; }
 @media (prefers-reduced-motion:reduce) { .stage-3d-extras, .stage > .card, .client-ambient { transform:none ; } }
 
 
-/* Native menu switch: survives blocked scripts and embedded browsers. */
-.menu-checkbox { position:absolute; opacity:0; pointer-events:none; width:1px; height:1px; }
-@media (max-width:800px) {
-  .nav .mobile-menu-toggle { display:inline-grid ; cursor:pointer; }
-  .js-menu .nav .mobile-menu-toggle { display:inline-grid ; }
-  .nav .links { display:none ; position:absolute; top:calc(100% + 8px); left:10px; right:10px; z-index:20; }
-  .nav .menu-checkbox:checked ~ .links, .js-menu .nav.menu-open .links { display:flex ; }
-  .nav .menu-checkbox:focus-visible + .mobile-menu-toggle { outline:2px solid var(--acid); outline-offset:4px; }
-}
-@media (min-width:801px) { .menu-checkbox, .nav .mobile-menu-toggle { display:none ; } }
-
-
-/* Definitive native menu: details/summary works without JavaScript or framework hydration. */
-.menu-details { display:contents; }
-.menu-details > summary { list-style:none; }
-.menu-details > summary::-webkit-details-marker { display:none; }
-@media (min-width:801px) {
-  .menu-details { display:contents; }
-  .menu-details > summary { display:none ; }
-  .menu-details > .links { display:flex ; position:static ; }
-}
-@media (max-width:800px) {
-  .nav { position:sticky; isolation:isolate; }
-  .menu-details { display:block; position:static; }
-  .menu-details > summary.mobile-menu-toggle { display:grid ; cursor:pointer; user-select:none; }
-  .menu-details > .links { display:none ; position:absolute ; top:calc(100% + 8px); left:10px; right:10px; z-index:30; }
-  .menu-details[open] > .links { display:flex ; }
-  .js-menu .nav.menu-open .menu-details > .links { display:flex ; }
-  .menu-details[open] > summary { color:var(--acid); border-color:var(--acid); }
-  .menu-details[open] > summary span { display:block; transform:rotate(45deg); }
-}
-@media (max-width:520px) {
-  .menu-details > .links { left:10px; right:10px; }
-}
-
-
 /* KLICHTECH NAVIGATION SYSTEM — namespaced, accessible and WebView-safe. */
 .kt-public-nav { position:sticky; top:0; z-index:100; }
-.kt-public-nav .menu-details { position:static; }
-.kt-public-nav .menu-details > .kt-public-links { z-index:110; }
 .client-nav-trigger, .client-nav-scrim { display:none; }
 .client-nav-lock { overflow:hidden; }
 .client-app { isolation:isolate; }
@@ -691,14 +653,6 @@ html, body { max-width:100%; overflow-x:hidden; }
 @media (max-width:800px) {
   .kt-public-nav { min-height:68px; padding-inline:max(14px, env(safe-area-inset-left)) max(14px, env(safe-area-inset-right)) ; }
   .kt-public-nav .brand { min-width:0; max-width:calc(100% - 54px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .kt-public-nav .menu-details { display:block; }
-  .kt-public-nav .menu-details > summary.mobile-menu-toggle { display:grid ; place-items:center; width:44px; height:44px; margin-left:auto; border:1px solid var(--line); border-radius:12px; color:var(--ink); background:rgba(255,255,255,.06); font-size:20px; cursor:pointer; }
-  .kt-public-nav .menu-details > .kt-public-links { display:none ; position:absolute ; top:calc(100% + 8px); left:12px; right:12px; flex-direction:column; align-items:stretch; gap:5px ; padding:10px ; background:rgba(11,12,24,.98); border:1px solid var(--line-strong); border-radius:18px; box-shadow:0 24px 65px rgba(0,0,0,.48); }
-  .kt-public-nav .menu-details[open] > .kt-public-links { display:flex ; }
-  .kt-public-nav .menu-details[open] > summary { color:var(--acid); border-color:var(--acid); }
-  .kt-public-nav .menu-details > .kt-public-links a, .kt-public-nav .menu-details > .kt-public-links .public-theme-toggle { display:flex ; align-items:center; justify-content:flex-start; min-height:46px; width:100%; padding:0 14px; border-radius:11px; }
-  .kt-public-nav .menu-details > .kt-public-links .pill { justify-content:center; margin-top:4px; }
-
   .client-nav-trigger { display:flex; position:fixed; top:max(12px, env(safe-area-inset-top)); left:max(12px, env(safe-area-inset-left)); z-index:70; align-items:center; gap:7px; min-height:44px; padding:0 12px; border:1px solid var(--line-strong); border-radius:12px; color:var(--ink); background:rgba(8,8,15,.86); box-shadow:0 10px 30px rgba(0,0,0,.25); backdrop-filter:blur(14px); font:800 11px/1 Arial,sans-serif; }
   .client-nav-trigger[aria-expanded="true"] { color:var(--acid); border-color:var(--acid); }
   .client-nav-scrim { position:fixed; inset:0; z-index:35; background:rgba(0,0,0,.56); opacity:0; pointer-events:none; transition:opacity .25s ease; }
@@ -739,14 +693,6 @@ html, body { max-width:100%; overflow-x:hidden; }
 }
 
 
-/* VERIFIED MOBILE MENU OVERRIDE — ID specificity prevents legacy rules from hiding the panel. */
-@media (max-width:900px) {
-  .kt-public-nav #site-menu { display:none ; position:absolute ; top:calc(100% + 8px) ; left:12px ; right:12px ; }
-  .kt-public-nav .menu-details[open] #site-menu { display:flex ; visibility:visible ; opacity:1 ; z-index:999 ; }
-  .kt-public-nav .menu-details[open] #site-menu > * { visibility:visible ; opacity:1 ; }
-  .kt-public-nav .menu-details > summary.mobile-menu-toggle { position:relative; z-index:1000; }
-}
-
 /* AUTHENTICATED COMMAND CENTER — matrix floor, orbital depth and a living background. */
 .client-app { background:
   radial-gradient(ellipse 70% 46% at 78% 18%, rgba(116,247,208,.12), transparent 68%),
@@ -767,13 +713,6 @@ html, body { max-width:100%; overflow-x:hidden; }
 @media (prefers-reduced-motion:reduce) { .client-app::after,.client-depth-scene .depth-ring,.client-depth-scene .depth-node { animation:none ; } }
 
 
-/* HARD FALLBACK: when details is open, the panel is forced into the visual layer. */
-.kt-public-nav .menu-details[open] #site-menu { display:flex ; visibility:visible ; opacity:1 ; position:fixed ; top:76px ; left:12px ; right:12px ; width:auto ; flex-direction:column ; align-items:stretch ; gap:6px ; padding:12px ; background:#0d1020 ; border:1px solid rgba(116,247,208,.6) ; border-radius:18px ; box-shadow:0 26px 70px rgba(0,0,0,.62),0 0 34px rgba(116,247,208,.12) ; z-index:2147483000 ; }
-.kt-public-nav .menu-details[open] #site-menu > a, .kt-public-nav .menu-details[open] #site-menu > button { display:flex ; visibility:visible ; opacity:1 ; min-height:48px ; width:100% ; align-items:center ; padding:0 15px ; color:#edf4f7 ; background:rgba(255,255,255,.055) ; border-radius:12px ; }
-.kt-public-nav .menu-details[open] #site-menu > .pill { justify-content:center ; color:#07110f ; background:var(--acid) ; }
-@media (max-width:600px) { .kt-public-nav .menu-details[open] #site-menu { top:68px ; left:10px ; right:10px ; } }
-
-
 /* FINAL PUBLIC MENU — real button + sibling panel, no details/checkbox/browser quirk. */
 .sr-only { position:absolute ; width:1px ; height:1px ; padding:0 ; margin:-1px ; overflow:hidden ; clip:rect(0,0,0,0) ; white-space:nowrap ; border:0 ; }
 @media (max-width:900px) {
@@ -790,23 +729,15 @@ html, body { max-width:100%; overflow-x:hidden; }
 @media (min-width:901px) { .kt-public-nav #public-menu-toggle { display:none ; } }
 
 
-/* TOUCH-SAFE FALLBACK: mobile/WebView keeps the panel open while the menu button has focus. */
-@media (max-width:900px) {
-  .kt-public-nav #public-menu-toggle:focus + #site-menu,
-  .kt-public-nav #public-menu-toggle:focus-visible + #site-menu,
-  .kt-public-nav #public-menu-toggle:active + #site-menu { display:flex ; visibility:visible ; opacity:1 ; position:fixed ; top:68px ; left:10px ; right:10px ; width:auto ; flex-direction:column ; gap:6px ; padding:12px ; background:#0d1020 ; border:1px solid rgba(116,247,208,.75) ; border-radius:18px ; box-shadow:0 26px 70px rgba(0,0,0,.62) ; z-index:2147483000 ; }
-  .kt-public-nav #public-menu-toggle:focus + #site-menu > *, .kt-public-nav #public-menu-toggle:active + #site-menu > * { display:flex ; visibility:visible ; opacity:1 ; min-height:48px ; align-items:center ; width:100% ; color:#edf4f7 ; background:rgba(255,255,255,.055) ; border-radius:12px ; }
-}
-
-/* NATIVE MENU FINAL: checkbox + label works in every browser/WebView without JS. */
-.menu-state { position:absolute ; width:1px ; height:1px ; opacity:0 ; pointer-events:none ; }
+/* FINAL MOBILE MENU: one real button, one JS state, no checkbox/focus conflicts. */
+.public-menu-lock { overflow:hidden; }
 @media (max-width:900px) {
   .kt-public-nav #public-menu-toggle { cursor:pointer; }
   .js-menu .kt-public-nav #site-menu { display:none ; }
-  .kt-public-nav #public-menu-state:checked ~ #site-menu { display:flex ; visibility:visible ; opacity:1 ; position:fixed ; top:68px ; left:10px ; right:10px ; width:auto ; flex-direction:column ; align-items:stretch ; gap:6px ; padding:12px ; background:#0d1020 ; border:1px solid rgba(116,247,208,.8) ; border-radius:18px ; box-shadow:0 26px 70px rgba(0,0,0,.7) ; z-index:2147483000 ; }
-  .kt-public-nav #public-menu-state:checked ~ #site-menu > * { display:flex ; visibility:visible ; opacity:1 ; align-items:center ; min-height:48px ; width:100% ; padding:0 15px ; color:#edf4f7 ; background:rgba(255,255,255,.055) ; border-radius:12px ; }
-  .kt-public-nav #public-menu-state:checked ~ #site-menu > .pill { justify-content:center ; color:#07110f ; background:var(--acid) ; }
-  .kt-public-nav #public-menu-state:checked + #public-menu-toggle { color:var(--acid); border-color:var(--acid); }
+  .js-menu .kt-public-nav.kt-menu-open #site-menu { display:flex ; visibility:visible ; opacity:1 ; position:fixed ; top:68px ; left:10px ; right:10px ; width:auto ; flex-direction:column ; align-items:stretch ; gap:6px ; padding:12px ; background:#0d1020 ; border:1px solid rgba(116,247,208,.8) ; border-radius:18px ; box-shadow:0 26px 70px rgba(0,0,0,.7) ; z-index:2147483000 ; }
+  .js-menu .kt-public-nav.kt-menu-open #site-menu > * { display:flex ; visibility:visible ; opacity:1 ; align-items:center ; min-height:48px ; width:100% ; padding:0 15px ; color:#edf4f7 ; background:rgba(255,255,255,.055) ; border-radius:12px ; }
+  .js-menu .kt-public-nav.kt-menu-open #site-menu > .pill { justify-content:center ; color:#07110f ; background:var(--acid) ; }
+  .js-menu .kt-public-nav.kt-menu-open #public-menu-toggle { color:var(--acid); border-color:var(--acid); }
 }
 
 /* Correções de estabilidade mobile sem alterar a composição visual original. */

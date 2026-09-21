@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   profile_photo BYTEA,
   profile_photo_mime TEXT,
   blocked_at TIMESTAMPTZ,
+  admin_2fa_disabled_at TIMESTAMPTZ,
+  admin_2fa_version BIGINT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

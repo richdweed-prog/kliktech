@@ -20,6 +20,7 @@ def admin_session(client):
     headers = authenticate(client, admin["id"])
     with client.session_transaction() as session:
         session["admin_2fa_ok"] = True
+        session["admin_2fa_version"] = 0
     return headers
 
 
@@ -167,6 +168,23 @@ def test_admin_without_2fa_is_denied(client):
     authenticate(client, admin["id"])
     response = client.get("/api/admin/dashboard")
     assert response.status_code == 403
+
+
+def test_support_only_can_disable_another_admin_two_factor(client):
+    support = create_user(name="Support", email="support@test.local", is_admin=True)
+    target = create_user(name="Target", email="target-admin@test.local", is_admin=True)
+    admin_session(client)
+    with client.session_transaction() as session:
+        session["user_id"] = support["id"]
+        session["admin_2fa_ok"] = True
+        session["admin_2fa_version"] = 0
+        csrf = session["csrf_token"]
+    headers = {"Origin": "http://localhost", "X-CSRF-Token": csrf}
+    assert client.patch(f"/api/admin/users/{support['public_id']}/2fa", json={"disabled": True, "reason": "self service must fail"}, headers=headers).status_code == 409
+    response = client.patch(f"/api/admin/users/{target['public_id']}/2fa", json={"disabled": True, "reason": "Recuperação solicitada pelo suporte"}, headers=headers)
+    assert response.status_code == 200
+    with db_connection() as connection:
+        assert connection.execute("SELECT admin_2fa_disabled_at FROM users WHERE id=%s", (target["id"],)).fetchone()["admin_2fa_disabled_at"] is not None
 
 
 def test_site_works_with_strict_csp_without_inline_code(client):

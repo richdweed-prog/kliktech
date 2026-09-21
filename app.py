@@ -13,6 +13,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import quote
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 from pathlib import Path
 from typing import Any
@@ -44,6 +45,7 @@ ADMIN_PASSWORD = os.environ.get("KLIKTECH_ADMIN_PASSWORD", "").strip()
 ADMIN_PATH = os.environ.get("KLIKTECH_ADMIN_PATH", "ademiroputo").strip().strip("/") or "ademiroputo"
 ADMIN_TOTP_SECRET = os.environ.get("KLIKTECH_ADMIN_TOTP_SECRET", "").strip().replace(" ", "").upper()
 ADMIN_TOTP_ISSUER = os.environ.get("KLIKTECH_ADMIN_TOTP_ISSUER", "KlikTech")
+ADMIN_TOTP_SETUP_ENABLED = os.environ.get("KLIKTECH_ADMIN_TOTP_SETUP_ENABLED", "0") == "1"
 WEB_ORIGIN = os.environ.get("KLIKTECH_PUBLIC_ORIGIN", "").strip().rstrip("/")
 COOKIE_SECURE = os.environ.get("KLIKTECH_COOKIE_SECURE", "1") == "1"
 BRAVOPAY_API_KEY = os.environ.get("BRAVOPAY_API_KEY", "").strip()
@@ -127,7 +129,7 @@ def _json_error(message: str, status: int):
 
 def client_ip() -> str:
     # Only trust X-Forwarded-For when explicitly configured behind the platform proxy.
-    if os.environ.get("KLIKTECH_TRUST_PROXY", "1") == "1":
+    if os.environ.get("KLIKTECH_TRUST_PROXY", "0") == "1":
         return request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()[:128]
     return (request.remote_addr or "unknown")[:128]
 
@@ -180,6 +182,18 @@ def check_totp(secret: str, code: str, *, at: int | None = None) -> bool:
 
 def configured_admin_2fa() -> bool:
     return bool(ADMIN_TOTP_SECRET)
+
+
+def admin_2fa_session_valid() -> bool:
+    if not g.user or not g.user.get("is_admin"):
+        return False
+    if g.user.get("admin_2fa_disabled_at"):
+        return True
+    return bool(
+        configured_admin_2fa()
+        and session.get("admin_2fa_ok")
+        and int(session.get("admin_2fa_version", -1)) == int(g.user.get("admin_2fa_version") or 0)
+    )
 
 
 def safe_user(row: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -311,10 +325,10 @@ def before_request():
     if request.path.startswith("/api/admin/") and not (g.user and g.user.get("is_admin")):
         return _json_error("Área administrativa protegida.", 403)
 
-    if g.user and request.path.startswith("/api/admin/") and not session.get("admin_2fa_ok"):
+    if g.user and request.path.startswith("/api/admin/") and not admin_2fa_session_valid():
         return _json_error("A autenticação de dois fatores do administrador é obrigatória.", 403)
 
-    if g.user and g.user.get("is_admin") and request.path.startswith("/api/admin/") and not configured_admin_2fa():
+    if g.user and g.user.get("is_admin") and request.path.startswith("/api/admin/") and not g.user.get("admin_2fa_disabled_at") and not configured_admin_2fa():
         return _json_error("2FA administrativo não configurado.", 403)
 
 
@@ -353,7 +367,7 @@ def admin_required(view):
     def wrapped(*args, **kwargs):
         if not g.user or not g.user.get("is_admin"):
             return _json_error("Área administrativa protegida.", 403)
-        if not configured_admin_2fa() or not session.get("admin_2fa_ok"):
+        if not admin_2fa_session_valid():
             return _json_error("A autenticação de dois fatores do administrador é obrigatória.", 403)
         return view(*args, **kwargs)
     return wrapped
@@ -374,6 +388,8 @@ def init_db():
             profile_photo BYTEA,
             profile_photo_mime TEXT,
             blocked_at TIMESTAMPTZ,
+            admin_2fa_disabled_at TIMESTAMPTZ,
+            admin_2fa_version BIGINT NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """,
@@ -477,6 +493,8 @@ def init_db():
     connection.execute("CREATE INDEX IF NOT EXISTS idx_purchases_user ON purchases(user_id, id DESC)")
     connection.execute("CREATE INDEX IF NOT EXISTS idx_wallet_charges_provider ON wallet_charges(provider_id)")
     connection.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS blocked_at TIMESTAMPTZ")
+    connection.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_2fa_disabled_at TIMESTAMPTZ")
+    connection.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_2fa_version BIGINT NOT NULL DEFAULT 0")
     admin_email = os.environ.get("KLIKTECH_ADMIN_EMAIL", "admin@kliktech.local").strip().lower()
     existing = connection.execute("SELECT id FROM users WHERE email=%s", (admin_email,)).fetchone()
     password_hash = generate_password_hash(ADMIN_PASSWORD)
@@ -550,13 +568,13 @@ def healthz():
 
 @app.get(f"/{ADMIN_PATH}")
 def admin_root():
-    allowed = bool(g.user and g.user.get("is_admin") and configured_admin_2fa() and session.get("admin_2fa_ok"))
+    allowed = admin_2fa_session_valid()
     return render_template("admin.html", csrf_token=csrf_token()) if allowed else render_template("admin-login.html", csrf_token=csrf_token())
 
 
 @app.get(f"/{ADMIN_PATH}/dashboard")
 def admin_dashboard_page():
-    if not g.user or not g.user.get("is_admin") or not configured_admin_2fa() or not session.get("admin_2fa_ok"):
+    if not admin_2fa_session_valid():
         return redirect(f"/{ADMIN_PATH}")
     return render_template("admin.html", csrf_token=csrf_token())
 
@@ -570,7 +588,7 @@ if ADMIN_PATH != "ademiroputo":
 
     @app.get("/ademiroputo/dashboard")
     def legacy_admin_dashboard_page():
-        if not g.user or not g.user.get("is_admin") or not configured_admin_2fa() or not session.get("admin_2fa_ok"):
+        if not admin_2fa_session_valid():
             return render_template("admin-login.html", csrf_token=csrf_token())
         return render_template("admin.html", csrf_token=csrf_token())
 
@@ -668,6 +686,10 @@ def login():
     session["user_id"] = user["id"]
     csrf_token()
     if user.get("is_admin"):
+        if user.get("admin_2fa_disabled_at"):
+            session["admin_2fa_ok"] = True
+            session["admin_2fa_version"] = int(user.get("admin_2fa_version") or 0)
+            return jsonify(user=safe_user(user), is_admin=True, requires_2fa=False, two_factor_disabled=True)
         session["admin_2fa_pending"] = True
         return jsonify(user=safe_user(user), is_admin=True, requires_2fa=True)
     return jsonify(user=safe_user(user), is_admin=False)
@@ -677,6 +699,8 @@ def login():
 def admin_2fa():
     if not g.user or not g.user.get("is_admin"):
         return _json_error("Área administrativa protegida.", 403)
+    if g.user.get("admin_2fa_disabled_at"):
+        return _json_error("O 2FA desta conta foi desativado pelo suporte.", 409)
     if not configured_admin_2fa():
         return _json_error("2FA administrativo não configurado.", 503)
     data = request.get_json(silent=True) or {}
@@ -684,6 +708,7 @@ def admin_2fa():
         return _json_error("Código 2FA inválido.", 401)
     session.pop("admin_2fa_pending", None)
     session["admin_2fa_ok"] = True
+    session["admin_2fa_version"] = int(g.user.get("admin_2fa_version") or 0)
     return jsonify(ok=True)
 
 
@@ -692,6 +717,10 @@ def admin_2fa_setup():
     """Return a local TOTP provisioning QR for the authenticated admin setup step."""
     if not g.user or not g.user.get("is_admin"):
         return _json_error("Área administrativa protegida.", 403)
+    if g.user.get("admin_2fa_disabled_at"):
+        return _json_error("O 2FA desta conta foi desativado pelo suporte.", 404)
+    if not ADMIN_TOTP_SETUP_ENABLED:
+        return _json_error("Provisionamento TOTP desabilitado neste ambiente.", 404)
     if not configured_admin_2fa():
         return _json_error("KLIKTECH_ADMIN_TOTP_SECRET ainda não foi configurado.", 503)
     account = str(g.user.get("email") or "admin").strip()
@@ -774,8 +803,8 @@ def cart_add():
 def create_pix():
     data = request.get_json(silent=True) or {}
     try:
-        amount = int(round(float(data.get("amount", 0)) * 100))
-    except (TypeError, ValueError):
+        amount = int((Decimal(str(data.get("amount", 0))) * 100).quantize(Decimal("1")))
+    except (InvalidOperation, TypeError, ValueError):
         amount = 0
     if amount < 500 or amount > 1_000_000:
         return _json_error("Escolha entre R$ 5 e R$ 10.000.", 400)
@@ -853,7 +882,7 @@ def bravopay_webhook():
             connection.commit()
             return jsonify(ok=True)
         # Never trust amount or customer identifiers from the webhook body.
-        if event_type == "transaction.paid" and charge["status"] != "PAID":
+        if event_type == "transaction.paid" and charge["status"] == "PENDING":
             amount = int(charge["amount_cents"])
             connection.execute("UPDATE users SET balance_cents=balance_cents+%s WHERE id=%s", (amount, charge["user_id"]))
             connection.execute("UPDATE wallet_charges SET status='PAID',paid_at=CURRENT_TIMESTAMP WHERE id=%s AND status<>'PAID'", (charge["id"],))
@@ -1212,11 +1241,11 @@ def admin_abandoned():
 @admin_required
 def admin_users():
     connection = db()
-    rows = connection.execute("SELECT id,public_id,name,email,is_admin,blocked_at,profile_photo IS NOT NULL AS has_photo,created_at FROM users ORDER BY id DESC").fetchall()
+    rows = connection.execute("SELECT id,public_id,name,email,is_admin,blocked_at,admin_2fa_disabled_at,profile_photo IS NOT NULL AS has_photo,created_at FROM users ORDER BY id DESC").fetchall()
     result = []
     for row in rows:
         ips = connection.execute("SELECT ip,created_at FROM access_logs WHERE user_id=%s ORDER BY created_at DESC LIMIT 10", (row["id"],)).fetchall()
-        result.append({"id": row["public_id"], "name": row["name"], "email": row["email"], "is_admin": bool(row["is_admin"]), "blocked": bool(row["blocked_at"]), "has_photo": bool(row["has_photo"]), "created_at": row["created_at"], "last_ip": ips[0]["ip"] if ips else "—"})
+        result.append({"id": row["public_id"], "name": row["name"], "email": row["email"], "is_admin": bool(row["is_admin"]), "blocked": bool(row["blocked_at"]), "two_factor_disabled": bool(row["admin_2fa_disabled_at"]), "has_photo": bool(row["has_photo"]), "created_at": row["created_at"], "last_ip": ips[0]["ip"] if ips else "—"})
     return jsonify(users=result)
 
 
@@ -1234,6 +1263,35 @@ def admin_user_access(public_id: str):
     connection.execute("UPDATE users SET blocked_at=%s WHERE id=%s", (utcnow() if blocked else None, row["id"]))
     connection.commit()
     return jsonify(ok=True, blocked=blocked)
+
+
+@app.patch("/api/admin/users/<public_id>/2fa")
+@admin_required
+def admin_user_two_factor(public_id: str):
+    """Support-only recovery action; there is no self-service 2FA disable route."""
+    if g.user.get("admin_2fa_disabled_at") or not configured_admin_2fa() or not session.get("admin_2fa_ok"):
+        return _json_error("Somente suporte autenticado com 2FA pode alterar o 2FA de outra conta.", 403)
+    data = request.get_json(silent=True) or {}
+    disabled = data.get("disabled")
+    reason = str(data.get("reason", "")).strip()
+    if not isinstance(disabled, bool) or len(reason) < 10 or len(reason) > 500:
+        return _json_error("Informe disabled booleano e um motivo de suporte entre 10 e 500 caracteres.", 400)
+    row = db().execute("SELECT id,is_admin FROM users WHERE public_id=%s", (public_id,)).fetchone()
+    if not row:
+        return _json_error("Usuário não encontrado.", 404)
+    if not row["is_admin"]:
+        return _json_error("Somente contas administrativas possuem 2FA gerenciado neste painel.", 409)
+    if row["id"] == g.user["id"]:
+        return _json_error("Não é permitido alterar o próprio 2FA por esta rota.", 409)
+    connection = db()
+    value = utcnow() if disabled else None
+    connection.execute("UPDATE users SET admin_2fa_disabled_at=%s,admin_2fa_version=admin_2fa_version+1 WHERE id=%s", (value, row["id"]))
+    connection.execute(
+        "INSERT INTO admin_events(event,detail) VALUES(%s,%s)",
+        ("admin_2fa_disabled" if disabled else "admin_2fa_enabled", json.dumps({"target_public_id": public_id, "reason": reason}, ensure_ascii=False)),
+    )
+    connection.commit()
+    return jsonify(ok=True, disabled=disabled)
 
 
 @app.get("/api/admin/inventory")

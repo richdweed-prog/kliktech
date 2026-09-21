@@ -1,6 +1,7 @@
 (() => {
   "use strict";
   const $ = (selector) => document.querySelector(selector);
+  const adminPath = document.body.dataset.adminPath || "/ademiroputo";
   let csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
   let busy = false;
 
@@ -36,6 +37,10 @@
     button.disabled = false;
     if (!result.response || !result.response.ok || !result.data.is_admin) {
       message(result.data.error || "Acesso administrativo não autorizado.", "error");
+      return;
+    }
+    if (!result.data.requires_2fa) {
+      window.location.href = `${adminPath}/dashboard`;
       return;
     }
     const me = await request("/api/me");
@@ -76,7 +81,7 @@
       message(result.data.error || "Código 2FA inválido.", "error");
       return;
     }
-    window.location.href = "/ademiroputo/dashboard";
+    window.location.href = `${adminPath}/dashboard`;
   }
 
   $("#admin-login-form")?.addEventListener("submit", submitLogin);

@@ -15,7 +15,7 @@ services:
       - key: KLIKTECH_COOKIE_SECURE
         value: "1"
       - key: KLIKTECH_TRUST_PROXY
-        value: "1"
+        value: "0"
       - key: KLIKTECH_SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
@@ -28,6 +28,8 @@ services:
         sync: false
       - key: KLIKTECH_ADMIN_TOTP_ISSUER
         value: KlikTech
+      - key: KLIKTECH_ADMIN_TOTP_SETUP_ENABLED
+        value: "0"
       - key: KLIKTECH_ADMIN_PATH
         sync: false
       - key: KLIKTECH_PUBLIC_ORIGIN

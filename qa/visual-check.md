@@ -9,3 +9,9 @@ A captura desktop em 1440×1000 px mostra a navegação original, composição o
 Os estilos estão em `static/css/legacy-inline.css` e `static/css/legacy-3d.css`; o comportamento visual está em `static/js/legacy-public.js`. A camada foi externalizada e não usa handlers inline.
 
 Arquivos: `qa/home-mobile.png` e `qa/home-desktop.png`.
+
+## Menu mobile — validação 2026-09-21
+
+O menu público foi consolidado em um único botão `<button>` com `aria-expanded`, sem checkbox, `details/summary` ou regra de `:focus` que force o painel aberto. Em viewport mobile, o painel abre somente após toque ou clique no botão, mantém itens com área mínima de toque, fecha ao selecionar um item, fecha ao clicar fora e fecha com `Escape`, devolvendo foco ao botão. O `body` bloqueia a rolagem enquanto o painel está aberto para evitar deslocamento acidental atrás do menu.
+
+A validação estática passou em `node --check static/js/legacy-public.js` e `git diff --check`. A validação visual final deve ser repetida após o deploy nos tamanhos 360×800, 390×844 e 430×932, incluindo abertura e fechamento por toque e teclado.
