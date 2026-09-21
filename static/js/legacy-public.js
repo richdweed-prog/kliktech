@@ -240,31 +240,6 @@ document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { 
   });
 })();
 
-/* Fallback do menu original: o checkbox continua sendo a fonte visual, e este
-   handler garante toque, teclado, fechamento externo e estado ARIA. */
-(() => {
-  const nav = document.querySelector('.kt-public-nav');
-  const toggle = document.querySelector('#public-menu-toggle');
-  const menu = document.querySelector('#site-menu');
-  if (!nav || !toggle || !menu) return;
-  const setMenu = (open) => {
-    nav.classList.toggle('kt-menu-open', open);
-    toggle.setAttribute('aria-expanded', String(open));
-    toggle.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
-    const icon = toggle.querySelector('[aria-hidden="true"]');
-    if (icon) icon.textContent = open ? '×' : '☰';
-  };
-  toggle.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setMenu(!nav.classList.contains('kt-menu-open'));
-  }, { passive: false });
-  menu.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setMenu(false)));
-  document.addEventListener('click', (event) => { if (!nav.contains(event.target)) setMenu(false); });
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false); });
-  setMenu(false);
-})();
-
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof loadClientMe === 'function') loadClientMe().catch(() => {});
 });
